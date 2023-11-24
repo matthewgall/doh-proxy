@@ -1,0 +1,34 @@
+{
+	"paranoia.mydns.network": [
+		"aa",
+		"cznic",
+		"dns0eu-uncensored",
+		"dnswarden-uncensored",
+		"faelix",
+		"foundationforappliedprivacy",
+		"he",
+		"lvnic",
+		"mullvad-uncensored",
+		"njalla-uncensored",
+		"opendns-uncensored",
+		"rethinkdns-uncensored",
+		"wikimedia"
+	],
+	"default": [
+        "aa",
+        "cloudflare",
+        "cznic",
+        "dns0eu-uncensored",
+        "dnswarden-uncensored",
+        "faelix",
+        "foundationforappliedprivacy",
+        "google",
+        "he",
+        "lvnic",
+        "mullvad-uncensored",
+        "njalla-uncensored",
+        "opendns-uncensored",
+        "rethinkdns-uncensored",
+        "wikimedia"
+    ]
+}

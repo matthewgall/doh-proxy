@@ -1,0 +1,10 @@
+name = "mydns-proxy"
+main = "src/index.ts"
+account_id = "b0d7b9f87b57470ef508f1a511093cae"
+workers_dev = true
+compatibility_date = "2023-10-30"
+node_compat = true
+routes = [
+    { pattern = "freedom.mydns.network/*", zone_name = "mydns.network" },
+    { pattern = "paranoia.mydns.network/*", zone_name = "mydns.network" }
+]
