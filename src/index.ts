@@ -25,7 +25,57 @@ Array.prototype.sampleN = function(n: any) {
 }
 
 router.get('/dns-query', async (request) => {
-	return new Response('Not Implemented', { status: 400 })
+	
+	// First, grab some request information
+	let url: any = new URL(request.url)
+
+	// And grab the question
+	let q: any = null;
+	if (request.query.dns) {
+		q = request.query.dns;
+	}
+	else {
+		return new Response('Missing query in ?dns=', { status: 400 })
+	}
+
+	// Next, we prepare to send it on, first pick a resolver (by default, we use the default)
+	let resolver: any = Config['default']
+	if (Config[url.hostname]) {
+		// Check now for a resolvers set for the hostname the request came in on
+		resolver = Config[url.hostname]
+	}
+
+	let promises = [];
+	if (resolver.length > 3) {
+		// We are going to race three for a response
+		for (let r of resolver.sampleN(3)) {
+			promises.push(fetch(`${Resolvers[r]}?dns=${q}`, {
+				headers: {
+					'Content-Type': 'application/dns-message'
+				}
+			}))
+		}
+	}
+	else {
+		// Otherwise, pick one
+		promises.push(fetch(`${Resolvers[resolver.sample()]}?dns=${q}`, {
+			headers: {
+				'Content-Type': 'application/dns-message'
+			}
+		}))
+	}
+	
+	// And send it off
+	let answer: any;
+	try {
+		answer = await Promise.any(promises);
+	}
+	catch(e: any) {
+		return new Response('We encountered a server error. Please try again later', { status: 500 })
+	}
+
+	// Once we have an answer, we return that
+	return answer;
 })
 
 router.post('/dns-query', async (request) => {
