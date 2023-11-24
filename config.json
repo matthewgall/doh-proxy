@@ -1,6 +1,7 @@
 {
 	"paranoia.mydns.network": [
 		"aa",
+        "adguard-uncensored",
 		"cznic",
 		"dns0eu-uncensored",
 		"dnswarden-uncensored",
@@ -16,6 +17,7 @@
 	],
 	"default": [
         "aa",
+        "adguard-uncensored",
         "cloudflare",
         "cznic",
         "dns0eu-uncensored",

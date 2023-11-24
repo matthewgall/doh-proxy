@@ -1,5 +1,6 @@
 {
     "aa": "https://dns.aa.net.uk/dns-query",
+    "adguard-uncensored": "https://unfiltered.adguard-dns.com/dns-query",
     "cloudflare": "https://mozilla.cloudflare-dns.com/dns-query",
     "cznic": "https://odvr.nic.cz/dns-query",
     "dns0eu-uncensored": "https://open.dns0.eu/",
