@@ -68,10 +68,16 @@ router.post('/dns-query', async (request) => {
 	}
 	
 	// And send it off
-	let answers: any = await Promise.any(promises);
+	let answer: any;
+	try {
+		answer = await Promise.any(promises);
+	}
+	catch(e: any) {
+		return new Response('We encountered a server error. Please try again later', { status: 500 })
+	}
 
 	// Once we have an answer, we return that
-	return answers
+	return answer;
 })
 
 router.get('/dns-providers', async (request) => {
