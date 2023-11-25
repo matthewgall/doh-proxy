@@ -24,7 +24,7 @@ Array.prototype.sampleN = function(n: any) {
 	return result;
 }
 
-function chooseResolvers(resolvers: any) {
+function chooseResolvers(resolvers: any, q: any) {
 	let p = [];
 	if (resolvers.length > 3) {
 		// We are going to race three for a response
@@ -69,7 +69,7 @@ router.get('/dns-query', async (request) => {
 		resolver = Config[url.hostname]
 	}
 
-	let providers = chooseResolvers(resolver);
+	let providers = chooseResolvers(resolver, q);
 	
 	// And send it off
 	let answer: any;
@@ -103,7 +103,7 @@ router.post('/dns-query', async (request) => {
 		resolver = Config[url.hostname]
 	}
 
-	let providers = chooseResolvers(resolver);
+	let providers = chooseResolvers(resolver, q);
 	
 	// And send it off
 	let answer: any;
