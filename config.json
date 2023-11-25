@@ -2,6 +2,7 @@
 	"adblock.mydns.network": [
         "adguard-adblock",
         "bunny-adblock",
+        "circl-adblock",
         "controld-adblock",
         "dnswarden-adblock",
         "faelix-adblock",
