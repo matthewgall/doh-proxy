@@ -1,11 +1,19 @@
 {
-	"paranoia.mydns.network": [
+	"adblock.mydns.network": [
+        "adguard-adblock",
+        "bunny-adblock",
+        "controld-adblock",
+        "dnswarden-adblock",
+        "faelix-adblock",
+        "mullvad-adblock"
+    ],
+    "paranoia.mydns.network": [
 		"aa",
         "adguard-uncensored",
 		"cznic",
 		"dns0eu-uncensored",
 		"dnswarden-uncensored",
-		"faelix",
+		"faelix-uncensored",
 		"foundationforappliedprivacy",
 		"he",
 		"lvnic",
@@ -22,7 +30,7 @@
         "cznic",
         "dns0eu-uncensored",
         "dnswarden-uncensored",
-        "faelix",
+        "faelix-uncensored",
         "foundationforappliedprivacy",
         "google",
         "he",
