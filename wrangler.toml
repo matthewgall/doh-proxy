@@ -5,6 +5,7 @@ workers_dev = true
 compatibility_date = "2023-10-30"
 node_compat = true
 routes = [
+    { pattern = "adblock.mydns.network/*", zone_name = "mydns.network" },
     { pattern = "freedom.mydns.network/*", zone_name = "mydns.network" },
     { pattern = "paranoia.mydns.network/*", zone_name = "mydns.network" }
 ]
