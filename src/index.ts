@@ -24,6 +24,30 @@ Array.prototype.sampleN = function(n: any) {
 	return result;
 }
 
+function chooseResolvers(resolvers: any) {
+	let p = [];
+	if (resolvers.length > 3) {
+		// We are going to race three for a response
+		for (let r of resolvers.sampleN(3)) {
+			p.push(fetch(`${Resolvers[r]}?dns=${q}`, {
+				headers: {
+					'Content-Type': 'application/dns-message'
+				}
+			}))
+		}
+	}
+	else {
+		// Otherwise, pick one
+		p.push(fetch(`${Resolvers[resolver.sample()]}?dns=${q}`, {
+			headers: {
+				'Content-Type': 'application/dns-message'
+			}
+		}))
+	}
+
+	return p;
+}
+
 router.get('/dns-query', async (request) => {
 	
 	// First, grab some request information
@@ -45,30 +69,12 @@ router.get('/dns-query', async (request) => {
 		resolver = Config[url.hostname]
 	}
 
-	let promises = [];
-	if (resolver.length > 3) {
-		// We are going to race three for a response
-		for (let r of resolver.sampleN(3)) {
-			promises.push(fetch(`${Resolvers[r]}?dns=${q}`, {
-				headers: {
-					'Content-Type': 'application/dns-message'
-				}
-			}))
-		}
-	}
-	else {
-		// Otherwise, pick one
-		promises.push(fetch(`${Resolvers[resolver.sample()]}?dns=${q}`, {
-			headers: {
-				'Content-Type': 'application/dns-message'
-			}
-		}))
-	}
+	let providers = chooseResolvers(resolver);
 	
 	// And send it off
 	let answer: any;
 	try {
-		answer = await Promise.any(promises);
+		answer = await Promise.any(providers);
 	}
 	catch(e: any) {
 		return new Response('We encountered a server error. Please try again later', { status: 500 })
@@ -97,30 +103,12 @@ router.post('/dns-query', async (request) => {
 		resolver = Config[url.hostname]
 	}
 
-	let promises = [];
-	if (resolver.length > 3) {
-		// We are going to race three for a response
-		for (let r of resolver.sampleN(3)) {
-			promises.push(fetch(`${Resolvers[r]}?dns=${q}`, {
-				headers: {
-					'Content-Type': 'application/dns-message'
-				}
-			}))
-		}
-	}
-	else {
-		// Otherwise, pick one
-		promises.push(fetch(`${Resolvers[resolver.sample()]}?dns=${q}`, {
-			headers: {
-				'Content-Type': 'application/dns-message'
-			}
-		}))
-	}
+	let providers = chooseResolvers(resolver);
 	
 	// And send it off
 	let answer: any;
 	try {
-		answer = await Promise.any(promises);
+		answer = await Promise.any(providers);
 	}
 	catch(e: any) {
 		return new Response('We encountered a server error. Please try again later', { status: 500 })
