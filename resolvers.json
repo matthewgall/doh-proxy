@@ -2,6 +2,7 @@
     "aa": "https://dns.aa.net.uk/dns-query",
     "adguard-adblock": "https://dns.adguard-dns.com/dns-query",
     "adguard-uncensored": "https://unfiltered.adguard-dns.com/dns-query",
+    "bt-uncensored": "https://doh.bt.com",
     "bunny-adblock": "https://doh1.b-cdn.net/dns-query",
     "cira-uncensored": "https://private.canadianshield.cira.ca/dns-query",
     "cira-malware": "https://protected.canadianshield.cira.ca/dns-query",
@@ -22,6 +23,7 @@
     "mullvad-adblock": "https://adblock.dns.mullvad.net/dns-query",
     "mullvad-uncensored": "https://dns.mullvad.net/dns-query",
     "njalla-uncensored": "https://dns.njal.la/dns-query",
+    "opendns-family": "https://doh.familyshield.opendns.com/dns-query",
     "opendns-uncensored": "https://doh.opendns.com/dns-query",
     "rethinkdns-uncensored": "https://sky.rethinkdns.com/dns-query",
     "wikimedia": "https://wikimedia-dns.org/dns-query"
