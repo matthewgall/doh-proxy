@@ -118,7 +118,7 @@ router.post('/dns-query', async (request) => {
 	let a = await answer.arrayBuffer();
 	return new Response(a, {
 		headers: {
-			'Content-Type': answer.headers['Content-Type']
+			'Content-Type': 'application/dns-message'
 		},
 		status: answer.status_code
 	})
