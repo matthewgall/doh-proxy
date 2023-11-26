@@ -9,6 +9,18 @@
         "faelix-adblock",
         "mullvad-adblock"
     ],
+    "family.mydns.network": [
+        "adguard-family",
+        "cira-family",
+        "cloudflare-family",
+        "controld-family",
+        "dns0eu-family",
+        "dnsfree-family",
+        "dnsforfamily-family",
+        "dnswarden-family",
+        "mullvad-family",
+        "opendns-family"
+    ],
     "paranoia.mydns.network": [
 		"aa",
         "adguard-uncensored",
@@ -32,7 +44,7 @@
         "adguard-uncensored",
         "ahadns-uncensored",
         "cira-uncensored",
-        "cloudflare",
+        "cloudflare-uncensored",
         "cznic",
         "dns0eu-uncensored",
         "dnswarden-uncensored",
