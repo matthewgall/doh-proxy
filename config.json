@@ -1,6 +1,7 @@
 {
 	"adblock.mydns.network": [
         "adguard-adblock",
+        "ahadns-adblock",
         "bunny-adblock",
         "circl-adblock",
         "controld-adblock",
@@ -11,6 +12,7 @@
     "paranoia.mydns.network": [
 		"aa",
         "adguard-uncensored",
+        "ahadns-uncensored",
         "cira-uncensored",
 		"cznic",
 		"dns0eu-uncensored",
@@ -28,6 +30,7 @@
 	"default": [
         "aa",
         "adguard-uncensored",
+        "ahadns-uncensored",
         "cira-uncensored",
         "cloudflare",
         "cznic",

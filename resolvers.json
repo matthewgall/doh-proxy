@@ -2,6 +2,8 @@
     "aa": "https://dns.aa.net.uk/dns-query",
     "adguard-adblock": "https://dns.adguard-dns.com/dns-query",
     "adguard-uncensored": "https://unfiltered.adguard-dns.com/dns-query",
+    "ahadns-adblock": "https://blitz.ahadns.com/1:1",
+    "ahadns-uncensored": "https://blitz.ahadns.com",
     "bt-uncensored": "https://doh.bt.com",
     "bunny-adblock": "https://doh1.b-cdn.net/dns-query",
     "cira-uncensored": "https://private.canadianshield.cira.ca/dns-query",
