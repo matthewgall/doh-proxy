@@ -115,7 +115,14 @@ router.post('/dns-query', async (request) => {
 	}
 
 	// Once we have an answer, we return that
-	return answer;
+	let a = await answer.arrayBuffer();
+	return new Response(a, {
+		headers: {
+			'Content-Type': answer.headers['Content-Type']
+		},
+		status: answer.status_code
+	})
+	// return answer;
 })
 
 router.get('/dns-providers', async (request) => {
