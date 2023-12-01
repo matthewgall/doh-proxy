@@ -2,6 +2,7 @@
 	"adblock.mydns.network": [
         "adguard-adblock",
         "ahadns-adblock",
+        "bebasdns-adblock",
         "bunny-adblock",
         "circl-adblock",
         "controld-adblock",
@@ -11,6 +12,7 @@
     ],
     "family.mydns.network": [
         "adguard-family",
+        "bebasdns-family",
         "cira-family",
         "cloudflare-family",
         "controld-family",
@@ -25,6 +27,7 @@
 		"aa",
         "adguard-uncensored",
         "ahadns-uncensored",
+        "bebasdns-uncensored",
         "cira-uncensored",
 		"cznic",
 		"dns0eu-uncensored",
@@ -43,6 +46,7 @@
         "aa",
         "adguard-uncensored",
         "ahadns-uncensored",
+        "bebasdns-uncensored",
         "cira-uncensored",
         "cloudflare-uncensored",
         "cznic",
