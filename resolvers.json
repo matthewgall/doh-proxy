@@ -9,6 +9,8 @@
     "bebasdns-adblock": "https://dns.bebasid.com/dns-query",
     "bebasdns-family": "https://internetsehat.bebasid.com/dns-query",
     "bebasdns-uncensored": "https://dns.bebasid.com/unfiltered",
+    "blokada-uncensored": "https://dns.blokada.org/dns-query",
+    "bortzmeyer-uncensored": "https://doh.bortzmeyer.fr",
     "bt-uncensored": "https://doh.bt.com",
     "bunny-adblock": "https://doh1.b-cdn.net/dns-query",
     "cira-uncensored": "https://private.canadianshield.cira.ca/dns-query",
