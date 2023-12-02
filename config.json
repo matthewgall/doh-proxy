@@ -21,7 +21,8 @@
         "dnsforfamily-family",
         "dnswarden-family",
         "mullvad-family",
-        "opendns-family"
+        "opendns-family",
+        "yandex-family"
     ],
     "paranoia.mydns.network": [
 		"aa",
@@ -40,7 +41,8 @@
 		"njalla-uncensored",
 		"opendns-uncensored",
 		"rethinkdns-uncensored",
-		"wikimedia"
+		"wikimedia",
+        "yandex-uncensored"
 	],
 	"default": [
         "aa",
@@ -61,6 +63,7 @@
         "njalla-uncensored",
         "opendns-uncensored",
         "rethinkdns-uncensored",
-        "wikimedia"
+        "wikimedia",
+        "yandex-uncensored"
     ]
 }
