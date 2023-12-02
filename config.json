@@ -41,13 +41,13 @@
 		"njalla-uncensored",
 		"opendns-uncensored",
 		"rethinkdns-uncensored",
-		"wikimedia",
-        "yandex-uncensored"
+		"wikimedia"
 	],
 	"default": [
         "aa",
         "adguard-uncensored",
         "ahadns-uncensored",
+        "alibaba-uncensored",
         "bebasdns-uncensored",
         "cira-uncensored",
         "cloudflare-uncensored",
