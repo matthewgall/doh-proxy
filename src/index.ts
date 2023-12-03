@@ -69,7 +69,7 @@ router.get('/dns-query', async (request) => {
 		t = dnsPacket.decode(t);
 	}
 	catch(e: any) {
-
+		console.log(e);
 		return new Response('Invalid query', { status: 500 })
 	}
 
@@ -109,6 +109,7 @@ router.post('/dns-query', async (request) => {
 		let t: any = dnsPacket.decode(q);
 	}
 	catch(e: any) {
+		console.log(e);
 		return new Response('Invalid query', { status: 500 })
 	}
 
