@@ -1,6 +1,6 @@
 import { Router } from 'itty-router';
 import { Buffer } from 'node:buffer';
-import { dnsPacket } from 'dns-packet';
+import dnsPacket from 'dns-packet';
 import Config from '../config.json';
 import Resolvers from '../resolvers.json';
 import Package from '../package-lock.json';
