@@ -63,7 +63,7 @@ router.get('/dns-query', async (request) => {
 		return new Response('Missing query in ?dns=', { status: 400 })
 	}
 
-	// Now, to validate the payload
+	/**
 	try {
 		let t: any = Buffer.from(q)
 		t = dnsPacket.decode(t);
@@ -72,6 +72,7 @@ router.get('/dns-query', async (request) => {
 		console.log(e);
 		return new Response('Invalid query', { status: 500 })
 	}
+	*/
 
 	// Next, we prepare to send it on, first pick a resolver (by default, we use the default)
 	let resolver: any = Config['default']
@@ -104,6 +105,7 @@ router.post('/dns-query', async (request) => {
 	let q: any = await request.arrayBuffer();
 	q = Buffer.from(q);
 
+	/**
 	// Now, to validate the payload
 	try {
 		let t: any = dnsPacket.decode(q);
@@ -112,6 +114,7 @@ router.post('/dns-query', async (request) => {
 		console.log(e);
 		return new Response('Invalid query', { status: 500 })
 	}
+	*/
 
 	// Now, prepare the payload
 	q = q.toString('base64').replace(/=+/, '');
