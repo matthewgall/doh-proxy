@@ -66,9 +66,10 @@ router.get('/dns-query', async (request) => {
 	// Now, to validate the payload
 	try {
 		let t: any = Buffer.from(q)
-		t = dnsPacket.decode(q);
+		t = dnsPacket.decode(t);
 	}
 	catch(e: any) {
+
 		return new Response('Invalid query', { status: 500 })
 	}
 
