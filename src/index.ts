@@ -1,5 +1,6 @@
 import { Router } from 'itty-router';
 import { Buffer } from 'node:buffer';
+import { dnsPacket } from 'dns-packet';
 import Config from '../config.json';
 import Resolvers from '../resolvers.json';
 import Package from '../package-lock.json';
@@ -62,6 +63,15 @@ router.get('/dns-query', async (request) => {
 		return new Response('Missing query in ?dns=', { status: 400 })
 	}
 
+	// Now, to validate the payload
+	try {
+		let t: any = Buffer.from(q)
+		t = dnsPacket.decode(q);
+	}
+	catch(e: any) {
+		return new Response('Invalid query', { status: 500 })
+	}
+
 	// Next, we prepare to send it on, first pick a resolver (by default, we use the default)
 	let resolver: any = Config['default']
 	if (Config[url.hostname]) {
@@ -92,6 +102,14 @@ router.post('/dns-query', async (request) => {
 	// First, we grab the question
 	let q: any = await request.arrayBuffer();
 	q = Buffer.from(q);
+
+	// Now, to validate the payload
+	try {
+		let t: any = dnsPacket.decode(q);
+	}
+	catch(e: any) {
+		return new Response('Invalid query', { status: 500 })
+	}
 
 	// Now, prepare the payload
 	q = q.toString('base64').replace(/=+/, '');
