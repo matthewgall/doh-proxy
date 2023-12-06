@@ -8,7 +8,8 @@
         "controld-adblock",
         "dnswarden-adblock",
         "faelix-adblock",
-        "mullvad-adblock"
+        "mullvad-adblock",
+        "openbld-adblock"
     ],
     "family.mydns.network": [
         "adguard-family",
