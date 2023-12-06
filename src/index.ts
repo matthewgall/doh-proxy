@@ -69,7 +69,6 @@ router.get('/dns-query', async (request) => {
 		t = dnsPacket.decode(t);
 	}
 	catch(e: any) {
-		console.log(e);
 		return new Response('Invalid query', { status: 500 })
 	}
 
@@ -92,7 +91,15 @@ router.get('/dns-query', async (request) => {
 	}
 
 	// Once we have an answer, we return that
-	return answer;
+	let a = await answer.arrayBuffer();
+	return new Response(a, {
+		headers: {
+			'Content-Type': answer.headers.get('Content-Type'),
+			'X-Provider': new URL(answer.url).hostname
+		},
+		status: answer.status
+	})
+
 })
 
 router.post('/dns-query', async (request) => {
@@ -109,7 +116,6 @@ router.post('/dns-query', async (request) => {
 		let t: any = dnsPacket.decode(q);
 	}
 	catch(e: any) {
-		console.log(e);
 		return new Response('Invalid query', { status: 500 })
 	}
 
@@ -138,11 +144,11 @@ router.post('/dns-query', async (request) => {
 	let a = await answer.arrayBuffer();
 	return new Response(a, {
 		headers: {
-			'Content-Type': 'application/dns-message'
+			'Content-Type': answer.headers.get('Content-Type'),
+			'X-Provider': new URL(answer.url).hostname
 		},
-		status: answer.status_code
+		status: answer.status
 	})
-	// return answer;
 })
 
 router.get('/dns-providers', async (request) => {
