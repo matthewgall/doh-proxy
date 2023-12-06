@@ -177,6 +177,14 @@ router.get('/dns-providers', async (request) => {
 	return new Response(JSON.stringify(resp, null, 2), { headers: {'Content-Type': 'application/json'}})
 })
 
+router.get('/version', async (request) => {
+	return new Response(Package.version, {
+		headers: {
+			'Content-Type': 'text/plain'
+		}
+	})
+});
+
 router.get('/', async (request) => {
 	return new Response(`Welcome to ${Package.name}`)
 });
