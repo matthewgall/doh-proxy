@@ -190,7 +190,12 @@ router.get('/', async (request) => {
 	let hostname: any = new URL(request.url).hostname
 
 	// This is going to be an amazing hack so I don't have to mess with KV
-	let data: any = await fetch('https://mydns.network/_resolver.html')
+	let data: any = await fetch('https://mydns.network/_resolver.html', {
+		cf: {
+			cacheTtl: 3600,
+			cacheEverything: true,
+		}
+	})
 	data = await data.text()
 
 	// And now we make some changes to the stored HTML
