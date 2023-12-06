@@ -186,7 +186,22 @@ router.get('/version', async (request) => {
 });
 
 router.get('/', async (request) => {
-	return new Response(`Welcome to ${Package.name}`)
+	// First, we grab the hostname they asked for
+	let hostname: any = new URL(request.url).hostname
+
+	// This is going to be an amazing hack so I don't have to mess with KV
+	let data: any = await fetch('https://mydns.network/_resolver.html')
+	data = await data.text()
+
+	// And now we make some changes to the stored HTML
+	data = data.replaceAll('[HOSTNAME]', hostname);
+
+	// And craft a new response
+	return new Response(data, {
+		headers: {
+			'Content-Type': 'text/html'
+		}
+	})
 });
 
 router.all("*", () => new Response("404, not found!", { status: 404 }))
