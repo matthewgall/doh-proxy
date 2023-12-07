@@ -1,6 +1,6 @@
 import { Router } from 'itty-router';
 import { Buffer } from 'node:buffer';
-import dnsPacket from 'native-dns-packet';
+import dnsPacket from 'dns-packet';
 import Config from '../config.json';
 import Resolvers from '../resolvers.json';
 import Package from '../package-lock.json';
@@ -67,12 +67,15 @@ router.get('/dns-query', async (request) => {
 	let t: any;
 	try {
 		t= Buffer.from(q, 'base64')
-		t = dnsPacket.parse(t);
+		t = dnsPacket.decode(t);
 
 		if (request.query.debug) {
-			for (let q of t.question) {
-				console.log(q)
+			try {
+				for (let q of t.questions) {
+					console.log(q)
+				}
 			}
+			catch(e: any) {}
 		}
 	}
 	catch(e: any) {
@@ -122,12 +125,15 @@ router.post('/dns-query', async (request) => {
 	let t: any;
 	try {
 		t= Buffer.from(q, 'base64')
-		t = dnsPacket.parse(t);
+		t = dnsPacket.decode(t);
 
 		if (request.query.debug) {
-			for (let q of t.question) {
-				console.log(q)
+			try {
+				for (let q of t.questions) {
+					console.log(q)
+				}
 			}
+			catch(e: any) {}
 		}
 	}
 	catch(e: any) {
