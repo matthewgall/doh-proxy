@@ -1,6 +1,6 @@
 import { Router } from 'itty-router';
 import { Buffer } from 'node:buffer';
-import dnsPacket from 'dns-packet';
+import dnsPacket from 'native-dns-packet';
 import Config from '../config.json';
 import Resolvers from '../resolvers.json';
 import Package from '../package-lock.json';
@@ -64,9 +64,16 @@ router.get('/dns-query', async (request) => {
 	}
 
 	// Now, to validate the payload
+	let t: any;
 	try {
-		let t: any = Buffer.from(q, 'base64')
-		t = dnsPacket.decode(t);
+		t= Buffer.from(q, 'base64')
+		t = dnsPacket.parse(t);
+
+		if (request.query.debug) {
+			for (let q of t.question) {
+				console.log(q)
+			}
+		}
 	}
 	catch(e: any) {
 		return new Response('Invalid query', { status: 500 })
@@ -112,8 +119,16 @@ router.post('/dns-query', async (request) => {
 	q = Buffer.from(q);
 
 	// Now, to validate the payload
+	let t: any;
 	try {
-		let t: any = dnsPacket.decode(q);
+		t= Buffer.from(q, 'base64')
+		t = dnsPacket.parse(t);
+
+		if (request.query.debug) {
+			for (let q of t.question) {
+				console.log(q)
+			}
+		}
 	}
 	catch(e: any) {
 		return new Response('Invalid query', { status: 500 })
