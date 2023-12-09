@@ -43,7 +43,6 @@
 		"mullvad-uncensored",
 		"njalla-uncensored",
 		"opendns-uncensored",
-        "quad9-uncensored",
 		"rethinkdns-uncensored",
 		"wikimedia"
 	],
@@ -68,7 +67,6 @@
         "mullvad-uncensored",
         "njalla-uncensored",
         "opendns-uncensored",
-        "quad9-uncensored",
         "rethinkdns-uncensored",
         "wikimedia",
         "yandex-uncensored"
