@@ -67,10 +67,10 @@ router.get('/dns-query', async (request) => {
 	let t: any;
 	try {
 		t= Buffer.from(q, 'base64')
-		t = dnsPacket.decode(t);
-
+		
 		if (request.query.debug) {
 			try {
+				t = dnsPacket.decode(t);
 				for (let q of t.questions) {
 					console.log(q)
 				}
@@ -124,11 +124,11 @@ router.post('/dns-query', async (request) => {
 	// Now, to validate the payload
 	let t: any;
 	try {
-		t= Buffer.from(q, 'base64')
-		t = dnsPacket.decode(t);
+		t= Buffer.from(q, 'base64');
 
 		if (request.query.debug) {
 			try {
+				t = dnsPacket.decode(t);
 				for (let q of t.questions) {
 					console.log(q)
 				}
