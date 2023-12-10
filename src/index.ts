@@ -215,6 +215,12 @@ router.get('/', async (request) => {
 		resolver = Config[hostname]
 	}
 
+	// Now to grab the resolver URLs
+	let resolvers: any = [];
+	for (let r of resolver) {
+		resolvers.push(Resolvers[r])
+	}
+
 	// This is going to be an amazing hack so I don't have to mess with KV
 	let data: any = await fetch('https://mydns.network/_resolver.html', {
 		cf: {
@@ -226,7 +232,7 @@ router.get('/', async (request) => {
 
 	// And now we make some changes to the stored HTML
 	data = data.replaceAll('[HOSTNAME]', hostname);
-	data = data.replaceAll('[RESOLVERS]', resolver.join('\n'))
+	data = data.replaceAll('[RESOLVERS]', resolvers.join('\n'))
 
 	// And craft a new response
 	return new Response(data, {
