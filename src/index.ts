@@ -209,6 +209,11 @@ router.get('/version', async (request) => {
 router.get('/', async (request) => {
 	// First, we grab the hostname they asked for
 	let hostname: any = new URL(request.url).hostname
+	let resolver: any = Config['default'];
+	if (Config[hostname]) {
+		// Check now for a resolvers set for the hostname the request came in on
+		resolver = Config[hostname]
+	}
 
 	// This is going to be an amazing hack so I don't have to mess with KV
 	let data: any = await fetch('https://mydns.network/_resolver.html', {
@@ -221,6 +226,7 @@ router.get('/', async (request) => {
 
 	// And now we make some changes to the stored HTML
 	data = data.replaceAll('[HOSTNAME]', hostname);
+	data = data.replaceAll('[RESOLVERS]', resolver.join('\n'))
 
 	// And craft a new response
 	return new Response(data, {
