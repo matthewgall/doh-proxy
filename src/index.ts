@@ -25,11 +25,10 @@ Array.prototype.sampleN = function(n: any) {
 	return result;
 }
 
-function chooseResolvers(resolvers: any, q: any) {
+function chooseResolvers(resolvers: any, q: any, n: any = 5) {
 	let p = [];
-	if (resolvers.length > 3) {
-		// We are going to race three for a response
-		for (let r of resolvers.sampleN(3)) {
+	if (resolvers.length > n) {
+		for (let r of resolvers.sampleN(n)) {
 			p.push(fetch(`${Resolvers[r]}?dns=${q}`, {
 				headers: {
 					'Content-Type': 'application/dns-message'
