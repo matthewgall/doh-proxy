@@ -83,10 +83,10 @@ router.get('/dns-query', async (request) => {
 	}
 
 	// Next, we prepare to send it on, first pick a resolver (by default, we use the default)
-	let resolver: any = Config['default']
+	let resolver: any = Config['default'].resolvers
 	if (Config[url.hostname]) {
 		// Check now for a resolvers set for the hostname the request came in on
-		resolver = Config[url.hostname]
+		resolver = Config[url.hostname].resolvers
 	}
 
 	let providers = chooseResolvers(resolver, q);
@@ -144,10 +144,10 @@ router.post('/dns-query', async (request) => {
 	q = q.toString('base64').replace(/=+/, '');
 
 	// Next, we prepare to send it on, first pick a resolver (by default, we use the default)
-	let resolver: any = Config['default']
+	let resolver: any = Config['default'].resolvers
 	if (Config[url.hostname]) {
 		// Check now for a resolvers set for the hostname the request came in on
-		resolver = Config[url.hostname]
+		resolver = Config[url.hostname].resolvers
 	}
 
 	let providers = chooseResolvers(resolver, q);
@@ -183,10 +183,10 @@ router.get('/dns-providers', async (request) => {
 	}
 
 	// Next, we prepare to send it on, first pick a resolver (set to our default set)
-	let resolver: any = Config['default'];
+	let resolver: any = Config['default'].resolvers;
 	if (Config[url.hostname]) {
 		// Check now for a resolvers set for the hostname the request came in on
-		resolver = Config[url.hostname]
+		resolver = Config[url.hostname].resolvers
 	}
 	
 	// Add each provider to the response, so they can be seen
@@ -209,10 +209,10 @@ router.get('/version', async (request) => {
 router.get('/', async (request) => {
 	// First, we grab the hostname they asked for
 	let hostname: any = new URL(request.url).hostname
-	let resolver: any = Config['default'];
+	let resolver: any = Config['default'].resolvers;
 	if (Config[hostname]) {
 		// Check now for a resolvers set for the hostname the request came in on
-		resolver = Config[hostname]
+		resolver = Config[hostname].resolvers;
 	}
 
 	// Now to grab the resolver URLs
