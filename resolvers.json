@@ -39,6 +39,7 @@
     "mullvad-adblock": "https://adblock.dns.mullvad.net/dns-query",
     "mullvad-family": "https://all.dns.mullvad.net/dns-query",
     "mullvad-uncensored": "https://dns.mullvad.net/dns-query",
+    "namecheap-uncensored": "https://safeservedns.com/dns-query",
     "njalla-uncensored": "https://dns.njal.la/dns-query",
     "openbld-adblock": "https://ada.openbld.net/dns-query",
     "opendns-family": "https://doh.familyshield.opendns.com/dns-query",
