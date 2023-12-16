@@ -25,7 +25,7 @@ Array.prototype.sampleN = function(n: any) {
 	return result;
 }
 
-function chooseResolvers(resolvers: any, q: any, n: any = 5) {
+function chooseResolvers(resolvers: any, q: any, n: any = 3) {
 	let p = [];
 	if (resolvers.length > n) {
 		for (let r of resolvers.sampleN(n)) {
