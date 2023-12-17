@@ -170,6 +170,3 @@ dist
 
 .dev.vars
 .wrangler/
-
-# project specific
-utils/
