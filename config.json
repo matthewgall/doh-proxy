@@ -4,7 +4,6 @@
         "resolvers": [
             "adguard-adblock",
             "ahadns-adblock",
-            "bebasdns-adblock",
             "bunny-adblock",
             "circl-adblock",
             "controld-adblock",
@@ -18,7 +17,6 @@
         "blocking": true,
         "resolvers": [
             "adguard-family",
-            "bebasdns-family",
             "cira-family",
             "cloudflare-family",
             "controld-family",
@@ -37,7 +35,6 @@
             "aa",
             "adguard-uncensored",
             "ahadns-uncensored",
-            "bebasdns-uncensored",
             "blokada-uncensored",
             "bortzmeyer-uncensored",
             "cira-uncensored",
@@ -63,7 +60,6 @@
             "adguard-uncensored",
             "ahadns-uncensored",
             "alibaba-uncensored",
-            "bebasdns-uncensored",
             "blokada-uncensored",
             "bortzmeyer-uncensored",
             "cira-uncensored",
