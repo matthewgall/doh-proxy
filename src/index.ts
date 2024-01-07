@@ -48,34 +48,35 @@ function chooseResolvers(resolvers: any, q: any, n: any = 3) {
 	return p;
 }
 
-router.get('/dns-query', async (request) => {
-	
-	// First, grab some request information
+router.all('/dns-query', async (request, env, context) => {
+    // First, grab some request information
 	let url: any = new URL(request.url)
+
+    // Now, we refuse anything that isn't GET or POST
+    if (!['GET', 'POST'].includes(request.method)) {
+        return new Response('Not Found.', { status: 404 })
+    }
 
 	// And grab the question
 	let q: any = null;
-	if (request.query.dns) {
-		q = request.query.dns;
-	}
-	else {
-		return new Response('Missing query in ?dns=', { status: 400 })
-	}
+    if (request.method == 'GET') {
+        if (request.query.dns) {
+            q = request.query.dns;
+        }
+        else {
+            return new Response('Missing query in ?dns=', { status: 400 })
+        }
+    }
+    if (request.method == 'POST') {
+        q = await request.arrayBuffer();
+	    q = Buffer.from(q);
+    }
 
 	// Now, to validate the payload
 	let t: any;
 	try {
-		t= Buffer.from(q, 'base64')
-		
-		if (request.query.debug) {
-			try {
-				t = dnsPacket.decode(t);
-				for (let q of t.questions) {
-					console.log(q)
-				}
-			}
-			catch(e: any) {}
-		}
+		t = Buffer.from(q, 'base64');
+		t = dnsPacket.decode(t);
 	}
 	catch(e: any) {
 		return new Response('Invalid query', { status: 500 })
@@ -88,67 +89,7 @@ router.get('/dns-query', async (request) => {
 		resolver = Config[url.hostname].resolvers
 	}
 
-	let providers = chooseResolvers(resolver, q);
-	
-	// And send it off
-	let answer: any;
-	try {
-		answer = await Promise.any(providers);
-	}
-	catch(e: any) {
-		return new Response('We encountered a server error. Please try again later', { status: 500 })
-	}
-
-	// Once we have an answer, we return that
-	let a = await answer.arrayBuffer();
-	return new Response(a, {
-		headers: {
-			'Content-Type': answer.headers.get('Content-Type'),
-			'X-Provider': new URL(answer.url).hostname
-		},
-		status: answer.status
-	})
-
-})
-
-router.post('/dns-query', async (request) => {
-
-	// First, grab some request information
-	let url: any = new URL(request.url);
-
-	// First, we grab the question
-	let q: any = await request.arrayBuffer();
-	q = Buffer.from(q);
-
-	// Now, to validate the payload
-	let t: any;
-	try {
-		t= Buffer.from(q, 'base64');
-
-		if (request.query.debug) {
-			try {
-				t = dnsPacket.decode(t);
-				for (let q of t.questions) {
-					console.log(q)
-				}
-			}
-			catch(e: any) {}
-		}
-	}
-	catch(e: any) {
-		return new Response('Invalid query', { status: 500 })
-	}
-
-	// Now, prepare the payload
-	q = q.toString('base64').replace(/=+/, '');
-
-	// Next, we prepare to send it on, first pick a resolver (by default, we use the default)
-	let resolver: any = Config['default'].resolvers
-	if (Config[url.hostname]) {
-		// Check now for a resolvers set for the hostname the request came in on
-		resolver = Config[url.hostname].resolvers
-	}
-
+	if (request.method == 'POST') q = q.toString('base64').replace(/=+/, '');
 	let providers = chooseResolvers(resolver, q);
 	
 	// And send it off
