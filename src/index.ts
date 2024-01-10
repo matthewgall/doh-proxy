@@ -181,7 +181,6 @@ router.all('/resolve', async (request, env, context) => {
 
 	// And next, we decode it
 	decoded = dnsPacket.decode(decoded);
-	console.log(decoded);
 	
 	// Now, we need to prepare the response
 	let resp: any = {}
