@@ -25,6 +25,80 @@ Array.prototype.sampleN = function(n: any) {
 	return result;
 }
 
+function toRcode(code: any) {
+	switch (code.toUpperCase()) {
+		case 'NOERROR': return 0
+		case 'FORMERR': return 1
+		case 'SERVFAIL': return 2
+		case 'NXDOMAIN': return 3
+		case 'NOTIMP': return 4
+		case 'REFUSED': return 5
+		case 'YXDOMAIN': return 6
+		case 'YXRRSET': return 7
+		case 'NXRRSET': return 8
+		case 'NOTAUTH': return 9
+		case 'NOTZONE': return 10
+		case 'RCODE_11': return 11
+		case 'RCODE_12': return 12
+		case 'RCODE_13': return 13
+		case 'RCODE_14': return 14
+		case 'RCODE_15': return 15
+	}
+	return 0
+}
+
+function toTypes(type: any) {
+	switch (type.toUpperCase()) {
+		case 'A': return 1
+		case 'NULL': return 10
+		case 'AAAA': return 28
+		case 'AFSDB': return 18
+		case 'APL': return 42
+		case 'CAA': return 257
+		case 'CDNSKEY': return 60
+		case 'CDS': return 59
+		case 'CERT': return 37
+		case 'CNAME': return 5
+		case 'DHCID': return 49
+		case 'DLV': return 32769
+		case 'DNAME': return 39
+		case 'DNSKEY': return 48
+		case 'DS': return 43
+		case 'HIP': return 55
+		case 'HINFO': return 13
+		case 'IPSECKEY': return 45
+		case 'KEY': return 25
+		case 'KX': return 36
+		case 'LOC': return 29
+		case 'MX': return 15
+		case 'NAPTR': return 35
+		case 'NS': return 2
+		case 'NSEC': return 47
+		case 'NSEC3': return 50
+		case 'NSEC3PARAM': return 51
+		case 'PTR': return 12
+		case 'RRSIG': return 46
+		case 'RP': return 17
+		case 'SIG': return 24
+		case 'SOA': return 6
+		case 'SPF': return 99
+		case 'SRV': return 33
+		case 'SSHFP': return 44
+		case 'TA': return 32768
+		case 'TKEY': return 249
+		case 'TLSA': return 52
+		case 'TSIG': return 250
+		case 'TXT': return 16
+		case 'AXFR': return 252
+		case 'IXFR': return 251
+		case 'OPT': return 41
+		case 'ANY': return 255
+		case '*': return 255
+	}
+	if (type.toUpperCase().startsWith('UNKNOWN_')) return parseInt(name.slice(8))
+	return 0
+}
+
 function chooseResolvers(resolvers: any, q: any, n: any = 3) {
 	let p = [];
 	if (resolvers.length > n) {
@@ -47,6 +121,134 @@ function chooseResolvers(resolvers: any, q: any, n: any = 3) {
 
 	return p;
 }
+
+function getRandomInt (min: any, max: any) {
+	return Math.floor(Math.random() * (max - min + 1)) + min
+}
+
+router.all('/resolve', async (request, env, context) => {
+	// First, grab some request information
+	let url: any = new URL(request.url)
+
+	// Now, we refuse anything that isn't GET or POST
+	if (!['GET', 'POST'].includes(request.method)) {
+		return new Response('Not Found.', { status: 404 })
+	}
+
+	let name: any;
+	let rrtype: any = 'A';
+
+	if (request.method == 'GET') {
+		if (request.query.name) name = request.query.name || null;
+		if (request.query.type) rrtype = request.query.type.toUpperCase();
+
+		if (name == null) return new Response('Missing name in ?name=', { status: 400 })
+	}
+
+	// Next, we need to prepare a query
+	let query: any = dnsPacket.encode({
+		type: 'query',
+		id: getRandomInt(1, 65534),
+		flags: dnsPacket.RECURSION_DESIRED,
+		questions: [{
+			type: rrtype,
+			name: name
+		}]
+	})
+	query = query.toString('base64').replace(/=+/, '');
+
+	// Next, we prepare to send it on, first pick a resolver (by default, we use the default)
+	let resolver: any = Config['default'].resolvers
+	if (Config[url.hostname]) {
+		// Check now for a resolvers set for the hostname the request came in on
+		resolver = Config[url.hostname].resolvers
+	}
+
+	let providers = chooseResolvers(resolver, query);
+	
+	// And send it off
+	let answer: any;
+	try {
+		answer = await Promise.any(providers);
+	}
+	catch(e: any) {
+		return new Response('We encountered a server error. Please try again later', { status: 500 })
+	}
+
+	// Once we have an answer, we read it in
+	let decoded: any = await answer.arrayBuffer();
+	decoded = Buffer.from(decoded);
+
+	// And next, we decode it
+	decoded = dnsPacket.decode(decoded);
+	console.log(decoded);
+	
+	// Now, we need to prepare the response
+	let resp: any = {}
+
+	// Initially, did the query even work?
+	resp.Status = toRcode(decoded.rcode);
+
+	// Next, we'll add some flags
+	for (let key of Object.keys(decoded)) {
+		if (key.includes('flag_')) {
+			if (['AD', 'CD', 'RA', 'RD', 'TC'].includes(key.replaceAll('flag_', '').toUpperCase())) {
+				resp[key.replaceAll('flag_', '').toUpperCase()] = decoded[key]
+			}
+		}
+	}
+
+	// And the question
+	resp.Question = [];
+	for (let q of decoded.questions) {
+		resp.Question.push({
+			'name': q.name,
+			'type': toTypes(q.type)
+		})
+	};
+
+
+	// Now, we determine if there is an answer to give
+	if (decoded.answers.length > 0) {
+		resp.Answer = [];
+		for (let ans of decoded.answers) {
+			if (['TXT'].includes(ans.type)) {
+				resp.Answer.push({
+					'name': ans.name,
+					'type': toTypes(ans.type),
+					'TTL': ans.ttl,
+					'data': ans.data[0].toString()
+				})
+			}
+			else {
+				resp.Answer.push({
+					'name': ans.name,
+					'type': toTypes(ans.type),
+					'TTL': ans.ttl,
+					'data': ans.data
+				})
+			}
+			
+		}
+	}
+	if (decoded.answers.length == 0) {
+		resp.Authority = [];
+		for (let auth of decoded.authorities) {
+			resp.Authority.push({
+				'name': auth.name,
+				'type': toTypes(auth.type),
+				'TTL': auth.ttl,
+				'data': `${auth.data.mname}. ${auth.data.rname}. ${auth.data.serial} ${auth.data.refresh} ${auth.data.retry} ${auth.data.expire} ${auth.data.minimum}`
+			})
+		}
+	}
+
+	// And a comment from where it came from
+	let prov: any = new URL(answer.url).hostname;
+	resp.Comment = `Response from ${prov}`
+
+	return new Response(JSON.stringify(resp))
+})
 
 router.all('/dns-query', async (request, env, context) => {
 	// First, grab some request information
