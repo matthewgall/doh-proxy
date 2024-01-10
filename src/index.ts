@@ -246,7 +246,7 @@ router.all('/resolve', async (request, env, context) => {
 	let prov: any = new URL(answer.url).hostname;
 	resp.Comment = `Response from ${prov}`
 
-	return new Response(JSON.stringify(resp))
+	return new Response(JSON.stringify(resp), { headers: { 'Content-Type': 'application/json'}})
 })
 
 router.all('/dns-query', async (request, env, context) => {
