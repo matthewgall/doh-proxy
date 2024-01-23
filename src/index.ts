@@ -219,6 +219,14 @@ router.all('/resolve', async (request, env, context) => {
 					'data': ans.data[0].toString()
 				})
 			}
+			else if(['SRV'].includes(ans.type)) {
+				resp.Answer.push({
+					'name': ans.name,
+					'type': toTypes(ans.type),
+					'TTL': ans.ttl,
+					'data': `${ans.data.priority} ${ans.data.weight} ${ans.data.port} ${ans.data.target}.`
+				})
+			}
 			else {
 				resp.Answer.push({
 					'name': ans.name,
