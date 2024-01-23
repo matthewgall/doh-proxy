@@ -219,7 +219,7 @@ router.all('/resolve', async (request, env, context) => {
 				'data': ans.data
 			}
 
-			if (['DS'].includes(ans.type)) r.data = `${ans.data.keyTag} ${ans.data.algorithm} ${ans.data.digestType} ${ans.data.toString()}.`
+			if (['DS'].includes(ans.type)) r.data = `${ans.data.keyTag} ${ans.data.algorithm} ${ans.data.digestType} ${ans.data[0].toString()}.`
 			if (['TXT'].includes(ans.type)) r.data = ans.data[0].toString()
 			if (['SRV'].includes(ans.type)) r.data = `${ans.data.priority} ${ans.data.weight} ${ans.data.port} ${ans.data.target}.`
 
