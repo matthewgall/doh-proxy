@@ -303,7 +303,6 @@ router.all('/dns-query', async (request, env, context) => {
 
 	// Once we have an answer, we return that
 	let a = await answer.arrayBuffer();
-	console.log(new URL(answer.url).hostname)
 	return new Response(a, {
 		headers: {
 			'Content-Type': answer.headers.get('Content-Type'),
