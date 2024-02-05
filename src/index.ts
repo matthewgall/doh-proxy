@@ -99,24 +99,27 @@ function toTypes(type: any) {
 	return 0
 }
 
+async function getDNSResponse(url: any) {
+	let r: any = await fetch(url, {
+		headers: {
+			'Content-Type': 'application/dns-message'
+		}
+	})
+
+	if (r.status !== 200) throw Error();
+	return r;
+}
+
 function chooseResolvers(resolvers: any, q: any, n: any = 3) {
 	let p = [];
 	if (resolvers.length > n) {
 		for (let r of resolvers.sampleN(n)) {
-			p.push(fetch(`${Resolvers[r]}?dns=${q}`, {
-				headers: {
-					'Content-Type': 'application/dns-message'
-				}
-			}))
+			p.push(getDNSResponse(`${Resolvers[r]}?dns=${q}`))
 		}
 	}
 	else {
 		// Otherwise, pick one
-		p.push(fetch(`${Resolvers[resolver.sample()]}?dns=${q}`, {
-			headers: {
-				'Content-Type': 'application/dns-message'
-			}
-		}))
+		p.push(getDNSResponse(`${Resolvers[resolver.sample()]}?dns=${q}`))
 	}
 
 	return p;
@@ -300,6 +303,7 @@ router.all('/dns-query', async (request, env, context) => {
 
 	// Once we have an answer, we return that
 	let a = await answer.arrayBuffer();
+	console.log(new URL(answer.url).hostname)
 	return new Response(a, {
 		headers: {
 			'Content-Type': answer.headers.get('Content-Type'),
