@@ -284,7 +284,7 @@ router.all('/dns-query', async (request, env, context) => {
 
 	// Next, we prepare to send it on, first pick a resolver (by default, we use the default)
 	let resolver: any = Config['default'].resolvers
-	if (Config[url.hostname]) {
+	if (Object.keys(Config).includes(url.hostname)) {
 		// Check now for a resolvers set for the hostname the request came in on
 		resolver = Config[url.hostname].resolvers
 	}
