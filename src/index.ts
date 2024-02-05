@@ -305,8 +305,8 @@ router.all('/dns-query', async (request, env, context) => {
 	let a = await answer.arrayBuffer();
 
 	// And if we need a debug issue
-	if (request.query.debug) console.log(new URL(answer.url).hostname)
-	
+	if (request.url.includes('?debug')) console.log(new URL(answer.url).hostname)
+
 	return new Response(a, {
 		headers: {
 			'Content-Type': answer.headers.get('Content-Type'),
