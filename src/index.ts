@@ -100,13 +100,14 @@ function toTypes(type: any) {
 }
 
 async function getDNSResponse(url: any) {
+	let p: any = new URL(url).hostname;
 	let r: any = await fetch(url, {
 		headers: {
 			'Content-Type': 'application/dns-message'
 		}
 	})
 
-	if (r.status !== 200) throw Error();
+	if (r.status !== 200) throw Error(`Encountered a non 200 response from ${p}`);
 	return r;
 }
 
@@ -119,7 +120,7 @@ function chooseResolvers(resolvers: any, q: any, n: any = 3) {
 	}
 	else {
 		// Otherwise, pick one
-		p.push(getDNSResponse(`${Resolvers[resolver.sample()]}?dns=${q}`))
+		p.push(getDNSResponse(`${Resolvers[resolvers.sample()]}?dns=${q}`))
 	}
 
 	return p;
@@ -294,19 +295,18 @@ router.all('/dns-query', async (request, env, context) => {
 	
 	// And send it off
 	let answer: any;
+	let a: any;
 	try {
 		answer = await Promise.any(providers);
+		a = await answer.arrayBuffer();
 	}
 	catch(e: any) {
-		return new Response('We encountered a server error. Please try again later', { status: 500 })
+		// So if we get here, something happened, so we'll try and build our own response
+		return new Response(`We encountered an error while performing this lookup: ${e}`, { status: 500 });
 	}
-
-	// Once we have an answer, we return that
-	let a = await answer.arrayBuffer();
 
 	// And if we need a debug issue
 	if (request.url.includes('?debug')) console.log(new URL(answer.url).hostname)
-
 	return new Response(a, {
 		headers: {
 			'Content-Type': answer.headers.get('Content-Type'),
