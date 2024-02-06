@@ -377,6 +377,7 @@ router.get('/', async (request) => {
 
 	// And now we make some changes to the stored HTML
 	data = data.replaceAll('[HOSTNAME]', hostname);
+	data = data.replaceAll('[NAME]', hostname.replace('.mydns.network', ''));
 	data = data.replaceAll('[RESOLVERS]', resolvers.join('\n'))
 
 	// And craft a new response
