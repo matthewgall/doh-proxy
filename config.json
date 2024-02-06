@@ -3,6 +3,7 @@
         "blocking": true,
         "resolvers": [
             "adguard-adblock",
+            "ahadns-adblock",
             "bunny-adblock",
             "circl-adblock",
             "controld-adblock",
