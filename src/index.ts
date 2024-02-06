@@ -1,6 +1,7 @@
 import { Router } from 'itty-router';
 import { Buffer } from 'node:buffer';
-import dnsPacket from 'dns-packet';
+import base64url from 'base64url';
+import * as dnsPacket from '@dnsquery/dns-packet';
 import Config from '../config.json';
 import Resolvers from '../resolvers.json';
 import Package from '../package-lock.json';
@@ -159,7 +160,7 @@ router.all('/resolve', async (request, env, context) => {
 			name: name
 		}]
 	})
-	query = query.toString('base64').replace(/=+/, '');
+	query = base64url(query);
 
 	// Next, we prepare to send it on, first pick a resolver (by default, we use the default)
 	let resolver: any = Config['default'].resolvers
@@ -290,7 +291,7 @@ router.all('/dns-query', async (request, env, context) => {
 		resolver = Config[url.hostname].resolvers
 	}
 
-	if (request.method == 'POST') q = q.toString('base64').replace(/=+/, '');
+	if (request.method == 'POST') q = base64url(q);
 	let providers = chooseResolvers(resolver, q);
 	
 	// And send it off
