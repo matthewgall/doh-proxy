@@ -369,7 +369,7 @@ router.get('/', async (request) => {
 	// This is going to be an amazing hack so I don't have to mess with KV
 	let data: any = await fetch('https://mydns.network/_resolver.html', {
 		cf: {
-			cacheTtl: 3600,
+			cacheTtl: 90,
 			cacheEverything: true,
 		}
 	})
