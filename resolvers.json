@@ -19,6 +19,7 @@
     "cloudflare-uncensored": "https://mozilla.cloudflare-dns.com/dns-query",
     "controld-adblock": "https://freedns.controld.com/p2",
     "controld-family": "https://freedns.controld.com/family",
+    "cubedns-uncensored": "https://cubedns.com/dns-query",
     "cznic": "https://odvr.nic.cz/dns-query",
     "dns0eu-family": "https://kids.dns0.eu/",
     "dns0eu-uncensored": "https://open.dns0.eu/",
