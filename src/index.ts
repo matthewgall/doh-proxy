@@ -108,7 +108,7 @@ async function getDNSResponse(url: any) {
 		}
 	})
 
-	if (r.status !== 200) throw Error(`Encountered a non 200 response from ${p}`);
+	if (r.status !== 200) throw Promise.reject(`Encountered a non 200 response from ${p}`);
 	return r;
 }
 
