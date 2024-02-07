@@ -150,6 +150,8 @@ router.all('/resolve', async (request, env, context) => {
 		if (name == null) return new Response('Missing name in ?name=', { status: 400 })
 	}
 
+	if (!['A', 'AAAA', 'DNSKEY', 'MX', 'SRV', 'TXT'].includes(rrtype)) return new Response('Unsupported rrtype', { status: 400 })
+
 	// Next, we need to prepare a query
 	let query: any = dnsPacket.encode({
 		type: 'query',
@@ -206,7 +208,7 @@ router.all('/resolve', async (request, env, context) => {
 	resp.Question = [];
 	for (let q of decoded.questions) {
 		resp.Question.push({
-			'name': q.name,
+			'name': `${q.name}.`,
 			'type': toTypes(q.type)
 		})
 	};
@@ -218,13 +220,13 @@ router.all('/resolve', async (request, env, context) => {
 		for (let ans of decoded.answers) {
 
 			let r: any = {
-				'name': ans.name,
+				'name': `${ans.name}.`,
 				'type': toTypes(ans.type),
 				'TTL': ans.ttl,
 				'data': ans.data
 			}
 
-			if (['DS'].includes(ans.type)) r.data = `${ans.data.keyTag} ${ans.data.algorithm} ${ans.data.digestType} ${ans.data[0].toString()}.`
+			if (['DNSKEY'].includes(ans.type)) r.data = `${ans.data.flags} ${ans.data.algorithm} ${btoa(String.fromCharCode.apply(null, ans.data.key))}`;
 			if (['TXT'].includes(ans.type)) r.data = ans.data[0].toString()
 			if (['SRV'].includes(ans.type)) r.data = `${ans.data.priority} ${ans.data.weight} ${ans.data.port} ${ans.data.target}.`
 
