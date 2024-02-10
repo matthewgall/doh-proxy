@@ -30,6 +30,7 @@
     "dnswarden-uncensored": "https://dns.dnswarden.com/uncensored",
     "faelix-uncensored": "https://rdns.faelix.net/",
     "faelix-adblock": "https://pdns.faelix.net/",
+    "fdn-uncensored": "https://ns0.fdn.fr/dns-query",
     "foundationforappliedprivacy": "https://doh.applied-privacy.net/query",
     "google": "https://dns.google/dns-query",
     "he": "https://ordns.he.net/dns-query",
