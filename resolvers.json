@@ -45,7 +45,7 @@
     "opendns-family": "https://doh.familyshield.opendns.com/dns-query",
     "opendns-uncensored": "https://doh.opendns.com/dns-query",
     "quad9-uncensored": "https://dns10.quad9.net/dns-query",
-    "rethinkdns-uncensored": "https://sky.rethinkdns.com/dns-query",
+    "rethinkdns-uncensored": "https://max.rethinkdns.com/dns-query",
     "wikimedia": "https://wikimedia-dns.org/dns-query",
     "yandex-family": "https://family.dot.dns.yandex.net/dns-query",
     "yandex-uncensored": "https://common.dot.dns.yandex.net/dns-query"
