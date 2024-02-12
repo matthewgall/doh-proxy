@@ -276,16 +276,6 @@ router.all('/dns-query', async (request, env, context) => {
 		q = Buffer.from(q);
 	}
 
-	// Now, to validate the payload
-	let t: any;
-	try {
-		t = Buffer.from(q, 'base64');
-		t = dnsPacket.decode(t);
-	}
-	catch(e: any) {
-		return new Response('Invalid query', { status: 500 })
-	}
-
 	// Next, we prepare to send it on, first pick a resolver (by default, we use the default)
 	let resolver: any = Config['default'].resolvers
 	if (Object.keys(Config).includes(url.hostname)) {
