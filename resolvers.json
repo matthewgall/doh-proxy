@@ -1,5 +1,5 @@
 {
-    "aa": "https://dns.aa.net.uk/dns-query",
+    "aa-uncensored": "https://dns.aa.net.uk/dns-query",
     "adguard-adblock": "https://dns.adguard-dns.com/dns-query",
     "adguard-family": "https://family.adguard-dns.com/dns-query",
     "adguard-uncensored": "https://unfiltered.adguard-dns.com/dns-query",
@@ -20,7 +20,7 @@
     "controld-adblock": "https://freedns.controld.com/p2",
     "controld-family": "https://freedns.controld.com/family",
     "cubedns-uncensored": "https://cubedns.com/dns-query",
-    "cznic": "https://odvr.nic.cz/dns-query",
+    "cznic-uncensored": "https://odvr.nic.cz/dns-query",
     "dns0eu-family": "https://kids.dns0.eu/",
     "dns0eu-uncensored": "https://open.dns0.eu/",
     "dnsfree-family": "https://dns-free.link/family",
@@ -33,9 +33,9 @@
     "fdn-uncensored": "https://ns0.fdn.fr/dns-query",
     "ffmuc-uncensored": "https://doh.ffmuc.net/dns-query",
     "foundationforappliedprivacy": "https://doh.applied-privacy.net/query",
-    "google": "https://dns.google/dns-query",
-    "he": "https://ordns.he.net/dns-query",
-    "lvnic": "https://doh.lv/dns-query",
+    "google-uncensored": "https://dns.google/dns-query",
+    "he-uncensored": "https://ordns.he.net/dns-query",
+    "lvnic-uncensored": "https://doh.lv/dns-query",
     "mullvad-adblock": "https://adblock.dns.mullvad.net/dns-query",
     "mullvad-family": "https://all.dns.mullvad.net/dns-query",
     "mullvad-uncensored": "https://dns.mullvad.net/dns-query",
@@ -46,7 +46,7 @@
     "opendns-uncensored": "https://doh.opendns.com/dns-query",
     "quad9-uncensored": "https://dns10.quad9.net/dns-query",
     "rethinkdns-uncensored": "https://max.rethinkdns.com/dns-query",
-    "wikimedia": "https://wikimedia-dns.org/dns-query",
+    "wikimedia-uncensored": "https://wikimedia-dns.org/dns-query",
     "yandex-family": "https://family.dot.dns.yandex.net/dns-query",
     "yandex-uncensored": "https://common.dot.dns.yandex.net/dns-query"
 }
