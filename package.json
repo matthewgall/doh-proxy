@@ -8,11 +8,11 @@
     "start": "wrangler dev"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20240314.0",
+    "@cloudflare/workers-types": "^4.20240320.1",
     "@types/dns-packet": "^5.6.5",
-    "itty-router": "^4.2.2",
-    "typescript": "^5.4.2",
-    "wrangler": "^3.34.2"
+    "itty-router": "^5.0.4",
+    "typescript": "^5.4.3",
+    "wrangler": "^3.41.0"
   },
   "dependencies": {
     "@dnsquery/dns-packet": "^6.1.1",
