@@ -5,6 +5,7 @@ import * as dnsPacket from '@dnsquery/dns-packet';
 import Config from '../config.json';
 import Resolvers from '../resolvers.json';
 import Package from '../package-lock.json';
+import Html from '../pages/_resolver.html';
 
 const router = Router();
 
@@ -359,13 +360,7 @@ router.get('/', async (request) => {
 	}
 
 	// This is going to be an amazing hack so I don't have to mess with KV
-	let data: any = await fetch('https://mydns.network/_resolver.html', {
-		cf: {
-			cacheTtl: 90,
-			cacheEverything: true,
-		}
-	})
-	data = await data.text()
+	let data: any = Html;
 
 	// And now we make some changes to the stored HTML
 	data = data.replaceAll('[HOSTNAME]', hostname);
