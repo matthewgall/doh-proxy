@@ -1,4 +1,4 @@
-name = "mydns-proxy"
+name = "mydnsproxy-dev"
 main = "src/index.ts"
 account_id = "b0d7b9f87b57470ef508f1a511093cae"
 workers_dev = true
@@ -6,6 +6,8 @@ compatibility_date = "2023-10-30"
 node_compat = true
 
 [env.prod]
+name = "mydns-proxy"
+workers_dev = false
 routes = [
     { pattern = "adblock.mydns.network/*", zone_name = "mydns.network" },
     { pattern = "family.mydns.network/*", zone_name = "mydns.network" },
