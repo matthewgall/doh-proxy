@@ -43,7 +43,7 @@
     "njalla-uncensored": "https://dns.njal.la/dns-query",
     "openbld-adblock": "https://ada.openbld.net/dns-query",
     "opendns-family": "https://doh.familyshield.opendns.com/dns-query",
-    "opendns-uncensored": "https://doh.opendns.com/dns-query",
+    "opendns-uncensored": "https://doh.sandbox.opendns.com/dns-query",
     "quad9-uncensored": "https://dns10.quad9.net/dns-query",
     "rethinkdns-uncensored": "https://max.rethinkdns.com/dns-query",
     "wikimedia-uncensored": "https://wikimedia-dns.org/dns-query",
