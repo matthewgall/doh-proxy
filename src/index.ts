@@ -117,12 +117,18 @@ function chooseResolvers(resolvers: any, q: any, family: any = "freedom", n: any
 	let p = [];
 	if (resolvers.length > n) {
 		for (let r of resolvers.sampleN(n)) {
-			p.push(getDNSResponse(`${Resolvers[r][family]}?dns=${q}`))
+			try {
+				p.push(getDNSResponse(`${Resolvers[r][family]}?dns=${q}`))
+			}
+			catch(e: any) {}
 		}
 	}
 	else {
 		// Otherwise, pick one
-		p.push(getDNSResponse(`${Resolvers[resolvers.sample()][family]}?dns=${q}`))
+		try {
+			p.push(getDNSResponse(`${Resolvers[resolvers.sample()][family]}?dns=${q}`))
+		}
+		catch(e: any) {}
 	}
 
 	return p;
