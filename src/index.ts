@@ -113,16 +113,16 @@ async function getDNSResponse(url: any) {
 	return r;
 }
 
-function chooseResolvers(resolvers: any, q: any, n: any = 3) {
+function chooseResolvers(resolvers: any, q: any, family: any = "freedom", n: any = 3) {
 	let p = [];
 	if (resolvers.length > n) {
 		for (let r of resolvers.sampleN(n)) {
-			p.push(getDNSResponse(`${Resolvers[r]}?dns=${q}`))
+			p.push(getDNSResponse(`${Resolvers[r][family]}?dns=${q}`))
 		}
 	}
 	else {
 		// Otherwise, pick one
-		p.push(getDNSResponse(`${Resolvers[resolvers.sample()]}?dns=${q}`))
+		p.push(getDNSResponse(`${Resolvers[resolvers.sample()][family]}?dns=${q}`))
 	}
 
 	return p;
@@ -172,7 +172,14 @@ router.all('/resolve', async (request, env, context) => {
 		resolver = Config[url.hostname].resolvers
 	}
 
-	let providers = chooseResolvers(resolver, query);
+	// We also have to determine the resolver family, by default, freedom
+	let family = "freedom"
+	if (url.hostname.includes('.mydns.network')) {
+		family = url.hostname.split('.')[0];
+	}
+	if (family == "paranoia") family = "freedom";
+
+	let providers = chooseResolvers(resolver, query, family);
 	
 	// And send it off
 	let answer: any;
@@ -285,6 +292,14 @@ router.all('/dns-query', async (request, env, context) => {
 	}
 
 	if (request.method == 'POST') q = base64url(q);
+
+	// We also have to determine the resolver family, by default, freedom
+	let family = "freedom"
+	if (url.hostname.includes('.mydns.network')) {
+		family = url.hostname.split('.')[0];
+	}
+	if (family == "paranoia") family = "freedom";
+
 	let providers = chooseResolvers(resolver, q);
 	
 	// And send it off
