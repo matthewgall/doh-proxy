@@ -21,8 +21,8 @@
             "cloudflare-family",
             "controld-family",
             "dns0eu-family",
-            "dnsfree-family",
             "dnsforfamily-family",
+            "dnsfree-family",
             "dnswarden-family",
             "mullvad-family",
             "opendns-family"
