@@ -26,6 +26,7 @@
     "dns0eu-uncensored": "https://open.dns0.eu/",
     "dnsforfamily-family": "https://dns-doh.dnsforfamily.com/dns-query",
     "dnsfree-family": "https://dns-free.link/family",
+    "dnssb-uncensored": "https://doh.dns.sb/dns-query",
     "dnswarden-adblock": "https://dns.dnswarden.com/adblock",
     "dnswarden-family": "https://dns.dnswarden.com/adultfilter",
     "dnswarden-uncensored": "https://dns.dnswarden.com/uncensored",
