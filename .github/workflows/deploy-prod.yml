@@ -31,4 +31,4 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           environment: prod
-          wranglerVersion: "3.28.1"
+          wranglerVersion: ${{ vars.WRANGLER_VERSION }}

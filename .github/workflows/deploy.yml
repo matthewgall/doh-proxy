@@ -29,4 +29,4 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          wranglerVersion: "3.28.1"
+          wranglerVersion: ${{ vars.WRANGLER_VERSION }}
