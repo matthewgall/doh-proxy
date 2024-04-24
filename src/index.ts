@@ -375,6 +375,8 @@ router.get('/', async (request) => {
 	// First, we grab the hostname they asked for
 	let hostname: any = new URL(request.url).hostname
 	let resolver: any = Config['default'].resolvers;
+	let url: any = new URL(request.url);
+	
 	if (Config[hostname]) {
 		// Check now for a resolvers set for the hostname the request came in on
 		resolver = Config[hostname].resolvers;
