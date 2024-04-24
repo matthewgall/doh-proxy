@@ -306,7 +306,7 @@ router.all('/dns-query', async (request, env, context) => {
 	}
 	if (family == "paranoia") family = "freedom";
 
-	let providers = chooseResolvers(resolver, q);
+	let providers = chooseResolvers(resolver, q, family);
 	
 	// And send it off
 	let answer: any;
@@ -348,9 +348,15 @@ router.get('/dns-providers', async (request) => {
 		resolver = Config[url.hostname].resolvers
 	}
 	
+	let family = "freedom"
+	if (url.hostname.includes('.mydns.network')) {
+		family = url.hostname.split('.')[0];
+	}
+	if (family == "paranoia") family = "freedom";
+
 	// Add each provider to the response, so they can be seen
 	for (let r of resolver) {
-		resp.providers.push(Resolvers[r])
+		resp.providers.push(Resolvers[r][family])
 	}
 
 	// And return that data
@@ -374,10 +380,16 @@ router.get('/', async (request) => {
 		resolver = Config[hostname].resolvers;
 	}
 
+	let family = "freedom"
+	if (url.hostname.includes('.mydns.network')) {
+		family = url.hostname.split('.')[0];
+	}
+	if (family == "paranoia") family = "freedom";
+
 	// Now to grab the resolver URLs
 	let resolvers: any = [];
 	for (let r of resolver) {
-		resolvers.push(Resolvers[r])
+		resolvers.push(Resolvers[r][family])
 	}
 
 	// This is going to be an amazing hack so I don't have to mess with KV
