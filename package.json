@@ -1,6 +1,6 @@
 {
   "name": "doh-proxy",
-  "version": "2024.4.4",
+  "version": "2024.4.5",
   "private": true,
   "scripts": {
     "deploy": "wrangler deploy",
