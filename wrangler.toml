@@ -11,7 +11,7 @@ routes = [
 ]
 
 [env.prod]
-name = "mydns-proxy"
+name = "mydnsproxy-prod"
 workers_dev = false
 routes = [
     { pattern = "adblock.mydns.network/*", zone_name = "mydns.network" },
