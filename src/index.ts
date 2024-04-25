@@ -1,7 +1,6 @@
 import { Router } from 'itty-router';
 import { Buffer } from 'node:buffer';
-import { toRcode } from '@dnsquery/dns-packet/rcodes';
-import { toType } from '@dnsquery/dns-packet/types';
+import { toType, toRcode } from './dnsUtils';
 import base64url from 'base64url';
 import * as dnsPacket from '@dnsquery/dns-packet';
 import Config from '../config.json';
