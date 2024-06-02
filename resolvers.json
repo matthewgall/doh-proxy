@@ -52,6 +52,9 @@
     "cznic": {
         "freedom": "https://odvr.nic.cz/dns-query"
     },
+    "digitale-gesellschaft": {
+        "freedom": "https://dns.digitale-gesellschaft.ch/dns-query"
+    },
     "digitalsize": {
         "freedom": "https://dns.digitalsize.net/dns-query"
     },
