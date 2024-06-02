@@ -43,7 +43,8 @@
     },
     "controld": {
         "adblock": "https://freedns.controld.com/p2",
-        "family": "https://freedns.controld.com/family"
+        "family": "https://freedns.controld.com/family",
+        "freedom": "https://freedns.controld.com/p0"
     },
     "cubedns": {
         "freedom": "https://cubedns.com/dns-query"
