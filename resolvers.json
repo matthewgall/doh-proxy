@@ -65,9 +65,6 @@
     "dnsforfamily": {
         "family": "https://dns-doh.dnsforfamily.com/dns-query"
     },
-    "dnsfree": {
-        "family": "https://dns-free.link/family"
-    },
     "dnssb": {
         "freedom": "https://doh.dns.sb/dns-query"
     },
