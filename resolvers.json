@@ -113,6 +113,9 @@
         "family": "https://doh.familyshield.opendns.com/dns-query",
         "freedom": "https://doh.sandbox.opendns.com/dns-query"
     },
+    "puredns": {
+        "freedom": "https://puredns.org/dns-query"
+    },
     "quad9": {
         "malware": "https://dns10.quad9.net/dns-query"
     },
