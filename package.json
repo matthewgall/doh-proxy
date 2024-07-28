@@ -8,14 +8,14 @@
     "start": "wrangler dev"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20240605.0",
+    "@cloudflare/workers-types": "^4.20240725.0",
     "@types/dns-packet": "^5.6.5",
     "itty-router": "^5.0.17",
-    "typescript": "^5.4.5",
-    "wrangler": "^3.60.0"
+    "typescript": "^5.5.4",
+    "wrangler": "^3.67.1"
   },
   "dependencies": {
-    "@dnsquery/dns-packet": "^6.1.1",
-    "base64url": "^3.0.1"
+    "base64url": "^3.0.1",
+    "dns-packet": "^5.6.1"
   }
 }
