@@ -54,6 +54,7 @@
             "njalla",
             "opendns",
             "puredns",
+            "quadrant-security",
             "rethinkdns",
             "wikimedia"
         ]
@@ -85,6 +86,7 @@
             "namecheap",
             "njalla",
             "puredns",
+            "quadrant-security",
             "rethinkdns",
             "wikimedia",
             "yandex"
