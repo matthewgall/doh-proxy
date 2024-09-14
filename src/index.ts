@@ -84,7 +84,7 @@ router.all('/resolve', async (request, env, context) => {
 		if (name == null) return new Response('Missing name in ?name=', { status: 400 })
 	}
 
-	if (!['A', 'AAAA', 'DNSKEY', 'MX', 'SRV', 'TXT'].includes(rrtype)) return new Response('Unsupported rrtype', { status: 400 })
+	if (!['A', 'AAAA', 'DNSKEY', 'MX', 'NS', 'SRV', 'TXT'].includes(rrtype)) return new Response('Unsupported rrtype', { status: 400 })
 
 	// Next, we need to prepare a query
 	let query: any = dnsPacket.encode({
