@@ -1,11 +1,16 @@
 #!/bin/bash
 
 server=${1:-freedom}
-resolvers=$(curl -s https://$server.mydns.network/dns-providers | jq -r '.providers[]')
+environment=${2:-prod}
+timeout=${3:10}
 
+if [ $environment = "staging" ]; then
+    server="$server.staging"
+fi
+resolvers=$(curl -s https://$server.mydns.network/dns-providers | jq -r '.providers[]')
 printf -- '%s\n' "$resolvers" | while IFS= read -r line; do
     test_id=$(openssl rand -hex 8)
     printf "Testing $line\n"
-    curl -s --doh-url $line https://$test_id.dns4.browserleaks.org/ | jq -r '. | keys | .[]'
+    curl -s --max-time $timeout --doh-url $line https://$test_id.dns4.browserleaks.org/ | jq -r '. | keys | .[]'
     sleep 1
 done
