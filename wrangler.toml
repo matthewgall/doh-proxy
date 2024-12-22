@@ -10,6 +10,10 @@ routes = [
     { pattern = "paranoia.staging.mydns.network/*", zone_name = "mydns.network" }
 ]
 
+# Observability
+[observability]
+enabled = true
+
 [env.prod]
 name = "mydnsproxy-prod"
 routes = [
