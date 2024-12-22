@@ -14,6 +14,9 @@
     "alibaba": {
         "freedom": "https://dns.alidns.com/dns-query"
     },
+    "belnet": {
+        "freedom": "https://dns.belnet.be/dns-query"
+    },
     "blokada": {
         "freedom": "https://dns.blokada.org/dns-query"
     },
@@ -45,6 +48,9 @@
         "adblock": "https://freedns.controld.com/p2",
         "family": "https://freedns.controld.com/family",
         "freedom": "https://freedns.controld.com/p0"
+    },
+    "csswg": {
+        "freedom": "https://dns.csswg.org/dns-query"
     },
     "cubedns": {
         "freedom": "https://cubedns.com/dns-query"
@@ -91,6 +97,9 @@
     },
     "he": {
         "freedom": "https://ordns.he.net/dns-query"
+    },
+    "libredns": {
+        "freedom": "https://doh.libredns.gr/dns-query"
     },
     "lvnic": {
         "freedom": "https://doh.lv/dns-query"
