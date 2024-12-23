@@ -2,7 +2,7 @@ name = "mydnsproxy-dev"
 main = "src/index.ts"
 account_id = "b0d7b9f87b57470ef508f1a511093cae"
 compatibility_date = "2023-10-30"
-node_compat = true
+compatibility_flags = ['nodejs_compat']
 routes = [
     { pattern = "adblock.staging.mydns.network/*", zone_name = "mydns.network" },
     { pattern = "family.staging.mydns.network/*", zone_name = "mydns.network" },
@@ -14,6 +14,11 @@ routes = [
 [observability]
 enabled = true
 
+# Analytics Engine
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"
+dataset = "mydnsproxy-dev"
+
 [env.prod]
 name = "mydnsproxy-prod"
 routes = [
@@ -22,3 +27,7 @@ routes = [
     { pattern = "freedom.mydns.network/*", zone_name = "mydns.network" },
     { pattern = "paranoia.mydns.network/*", zone_name = "mydns.network" }
 ]
+
+    [[env.prod.analytics_engine_datasets]]
+    binding = "ANALYTICS"
+    dataset = "mydnsproxy-prod"

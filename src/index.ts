@@ -188,6 +188,12 @@ router.all('/resolve', async (request, env, context) => {
 
 	// And a comment from where it came from
 	let prov: any = new URL(answer.url).hostname;
+	// In order to check how we're doing responses, we'll log the provider and the resolver to identify issues
+	env.ANALYTICS.writeDataPoint({
+		'blobs': [prov], // We log what provider was used
+		'doubles': [],
+		'indexes': [family] // And what resolver family was used
+	});
 	resp.Comment = `Response from ${prov}`
 
 	return new Response(JSON.stringify(resp), { headers: { 'Content-Type': 'application/json'}})
