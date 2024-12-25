@@ -312,6 +312,43 @@ router.get('/version', async (request) => {
 	})
 });
 
+router.get('/resolver-usage', async (request, env) => {
+	// First, we grab the hostname they asked for
+	let url: any = new URL(request.url);
+
+	// Check the hostname is valid
+	let family = "freedom"
+	if (url.hostname.includes('.mydns.network')) {
+		family = url.hostname.split('.')[0];
+	}
+	if (family == "paranoia") family = "freedom";
+
+	// Now we select the right dataset
+	let dataset: any = 'prod'
+	if (url.hostname.includes('.staging.')) dataset = 'dev'
+
+	// Next, we query today's use from Analytics Engine
+	let resp: any = {
+		data: null
+	}
+
+	try {
+		let query = `SELECT blob1 AS resolver, sum(_sample_interval) AS count FROM 'mydnsproxy-${dataset}' WHERE index1 = '${family}' AND timestamp > NOW() - INTERVAL '1' DAY GROUP BY resolver ORDER BY count DESC;`
+		let data: any = await fetch(`https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/analytics_engine/sql`, {
+			method: 'POST',
+			body: query,
+			headers: {
+				'Authorization': `Bearer ${env.CLOUDFLARE_ACCOUNT_TOKEN}`,
+			}
+		})
+		if (data.status !== 200) return {}
+		resp.data = await data.json();
+	}
+	catch(e: any) {}
+
+	return new Response(JSON.stringify(resp, null, 2), { headers: {'Content-Type': 'application/json'}})
+})
+
 router.get('/', async (request) => {
 	// First, we grab the hostname they asked for
 	let hostname: any = new URL(request.url).hostname
