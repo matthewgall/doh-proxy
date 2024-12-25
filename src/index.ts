@@ -253,6 +253,14 @@ router.all('/dns-query', async (request, env, context) => {
 		return new Response(`We encountered an error while performing this lookup: ${e}`, { status: 500 });
 	}
 
+	// Next, log the usage to Analytics Engine
+	let prov: any = new URL(answer.url).hostname;
+	env.ANALYTICS.writeDataPoint({
+		'blobs': [prov], // We log what provider was used
+		'doubles': [],
+		'indexes': [family] // And what resolver family was used
+	});
+
 	// And if we need a debug issue
 	if (request.url.includes('?debug')) console.log(new URL(answer.url).hostname)
 	return new Response(a, {
