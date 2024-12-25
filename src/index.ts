@@ -328,9 +328,7 @@ router.get('/resolver-usage', async (request, env) => {
 	if (url.hostname.includes('.staging.')) dataset = 'dev'
 
 	// Next, we query today's use from Analytics Engine
-	let resp: any = {
-		data: null
-	}
+	let resp: any = {}
 
 	try {
 		let query = `SELECT blob1 AS resolver, sum(_sample_interval) AS count FROM 'mydnsproxy-${dataset}' WHERE index1 = '${family}' AND timestamp > NOW() - INTERVAL '1' DAY GROUP BY resolver ORDER BY count DESC;`
@@ -342,7 +340,9 @@ router.get('/resolver-usage', async (request, env) => {
 			}
 		})
 		if (data.status !== 200) return {}
-		resp.data = await data.json();
+		data = await data.json();
+
+		resp.data = data.data;
 	}
 	catch(e: any) {}
 
