@@ -1,6 +1,6 @@
-name = "mydnsproxy-dev"
+name = "mydnsproxy-dev0"
 main = "src/index.ts"
-account_id = "b0d7b9f87b57470ef508f1a511093cae"
+account_id = "9a3d95f55feeaa895f035cbd07a3de41"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 routes = [
