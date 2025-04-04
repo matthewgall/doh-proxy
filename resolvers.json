@@ -108,6 +108,10 @@
     "lvnic": {
         "freedom": "https://doh.lv/dns-query"
     },
+    "momou": {
+        "adblock": "https://dns.momou.ch/dns-query",
+        "freedom": "https://dns.momou.ch/dns-query/unfiltered"
+    },
     "mullvad": {
         "adblock": "https://adblock.dns.mullvad.net/dns-query",
         "family": "https://all.dns.mullvad.net/dns-query",

@@ -9,6 +9,7 @@
             "controld",
             "dnswarden",
             "hostux",
+            "momou",
             "mullvad",
             "openbld"
         ]
@@ -52,6 +53,7 @@
             "hostux",
             "libredns",
             "lvnic",
+            "momou",
             "mullvad",
             "namecheap",
             "njalla",
@@ -86,6 +88,7 @@
             "hostux",
             "libredns",
             "lvnic",
+            "momou",
             "mullvad",
             "namecheap",
             "njalla",
