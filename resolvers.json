@@ -99,8 +99,7 @@
         "freedom": "https://ordns.he.net/dns-query"
     },
     "hostux": {
-        "adblock": "https://dns.hostux.net/ads",
-        "freedom": "https://dns.hostux.net/dns-query"
+        "adblock": "https://dns.hostux.net/ads"
     },
     "libredns": {
         "freedom": "https://doh.libredns.gr/dns-query"
