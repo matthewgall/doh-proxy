@@ -1,6 +1,6 @@
 {
   "name": "doh-proxy",
-  "version": "2025.4.1",
+  "version": "2025.8.0",
   "private": true,
   "scripts": {
     "deploy": "wrangler deploy",
@@ -8,11 +8,11 @@
     "start": "wrangler dev"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250404.0",
+    "@cloudflare/workers-types": "^4.20250801.0",
     "@types/dns-packet": "^5.6.5",
-    "itty-router": "^5.0.18",
-    "typescript": "^5.8.2",
-    "wrangler": "^4.7.1"
+    "itty-router": "^5.0.20",
+    "typescript": "^5.9.2",
+    "wrangler": "^4.27.0"
   },
   "dependencies": {
     "@dnsquery/dns-packet": "^6.1.1",
