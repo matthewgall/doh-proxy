@@ -7,10 +7,6 @@
         "family": "https://family.adguard-dns.com/dns-query",
         "freedom": "https://unfiltered.adguard-dns.com/dns-query"
     },
-    "ahadns": {
-        "adblock": "https://blitz.ahadns.com/1:1",
-        "freedom": "https://blitz.ahadns.com"
-    },
     "alibaba": {
         "freedom": "https://dns.alidns.com/dns-query"
     },
@@ -74,11 +70,6 @@
     "dnssb": {
         "freedom": "https://doh.dns.sb/dns-query"
     },
-    "dnswarden": {
-        "adblock": "https://dns.dnswarden.com/adblock",
-        "family": "https://dns.dnswarden.com/adultfilter",
-        "freedom": "https://dns.dnswarden.com/uncensored"
-    },
     "faelix": {
         "adblock": "https://pdns.faelix.net/",
         "freedom": "https://rdns.faelix.net/"
@@ -98,18 +89,11 @@
     "he": {
         "freedom": "https://ordns.he.net/dns-query"
     },
-    "hostux": {
-        "adblock": "https://dns.hostux.net/ads"
-    },
     "libredns": {
         "freedom": "https://doh.libredns.gr/dns-query"
     },
     "lvnic": {
         "freedom": "https://doh.lv/dns-query"
-    },
-    "momou": {
-        "adblock": "https://dns.momou.ch/dns-query",
-        "freedom": "https://dns.momou.ch/dns-query/unfiltered"
     },
     "mullvad": {
         "adblock": "https://adblock.dns.mullvad.net/dns-query",

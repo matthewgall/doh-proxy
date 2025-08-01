@@ -3,12 +3,9 @@
         "blocking": true,
         "resolvers": [
             "adguard",
-            "ahadns",
             "bunny",
             "circl",
             "controld",
-            "dnswarden",
-            "momou",
             "mullvad",
             "openbld"
         ]
@@ -22,7 +19,6 @@
             "controld",
             "dns0eu",
             "dnsforfamily",
-            "dnswarden",
             "mullvad",
             "opendns"
         ]
@@ -32,7 +28,6 @@
         "resolvers": [
             "aa",
             "adguard",
-            "ahadns",
             "belnet",
             "blokada",
             "bortzmeyer",
@@ -43,7 +38,6 @@
             "digitalsize",
             "dns0eu",
             "dnssb",
-            "dnswarden",
             "faelix",
             "fdn",
             "ffmuc",
@@ -51,7 +45,6 @@
             "he",
             "libredns",
             "lvnic",
-            "momou",
             "mullvad",
             "namecheap",
             "njalla",
@@ -66,7 +59,6 @@
         "resolvers": [
             "aa",
             "adguard",
-            "ahadns",
             "alibaba",
             "belnet",
             "blokada",
@@ -78,14 +70,12 @@
             "digitalsize",
             "dns0eu",
             "dnssb",
-            "dnswarden",
             "fdn",
             "ffmuc",
             "foundationforappliedprivacy",
             "he",
             "libredns",
             "lvnic",
-            "momou",
             "mullvad",
             "namecheap",
             "njalla",
