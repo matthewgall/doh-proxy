@@ -4,103 +4,753 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mydns.network - Modern DNS Resolver</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
-    <title>mydns.network</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.2/cosmo/bootstrap.min.css" integrity="sha512-GVdrCO8+HISboPZQ1DEaBPFw9qrVh8rNqCOZXsk04l2s+kn/gHR8fTq2Hvxz1fkZdhjf5EQJVrxuRWLoXpcngA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="/style.css" >
+    <!-- Custom Tailwind Config & Base Styles -->
+    <style>
+        /* Custom Font */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for a more sleek look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        /* Tab styling */
+        .tab-active {
+            border-color: #3b82f6; /* blue-500 */
+            color: #1e293b; /* slate-800 */
+        }
+        /* Accordion transition */
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .accordion-content.open {
+            max-height: 500px; /* Adjust as needed */
+        }
+        .accordion-arrow {
+            transition: transform 0.3s ease-in-out;
+        }
+        .accordion-button.open .accordion-arrow {
+            transform: rotate(90deg);
+        }
+        /* Resolver Button Active State */
+        .resolver-btn.active {
+            background-color: #eff6ff; /* blue-50 */
+            border-color: #3b82f6; /* blue-500 */
+            color: #1e3a8a; /* blue-900 */
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+        }
+        /* JSON Viewer Styles */
+        .json-formatter {
+            font-family: 'Menlo', 'Courier New', monospace;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            background-color: #1e293b; /* slate-800 */
+            color: #e2e8f0; /* slate-200 */
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            overflow-x: auto;
+        }
+        .json-formatter .collapsible {
+            padding-left: 1.5rem;
+        }
+        .json-formatter .collapser {
+            cursor: pointer;
+            display: inline-block;
+            width: 1rem;
+            user-select: none;
+        }
+        .json-formatter .collapsible.collapsed > .collapser::after {
+            content: '▸';
+        }
+         .json-formatter .collapsible:not(.collapsed) > .collapser::after {
+            content: '▾';
+        }
+        .json-formatter .collapsible.collapsed > .content {
+            display: none;
+        }
+        .json-formatter .ellipsis {
+            display: none;
+        }
+        .json-formatter .collapsible.collapsed > .ellipsis {
+            display: inline;
+        }
+        .json-formatter .json-key { color: #93c5fd; } /* blue-300 */
+        .json-formatter .json-string { color: #a5f3fc; } /* cyan-300 */
+        .json-formatter .json-number { color: #f9a8d4; } /* pink-300 */
+        .json-formatter .json-boolean { color: #d8b4fe; } /* purple-300 */
+    </style>
 </head>
 
-<body>
-    <nav class="navbar navbar-inverse navbar-fixed-top">
-        <div class="container">
-            <div class="navbar-header">
-                <a class="navbar-brand" href="/">mydns.network</a>
+<body class="bg-slate-50 text-slate-800 antialiased">
+
+    <!-- Header -->
+    <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-10 border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <a href="/" class="flex items-center gap-3">
+                    <!-- NEW SVG Logo -->
+                    <svg class="h-8 w-auto text-blue-600" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4 12C4 7.58172 7.58172 4 12 4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12Z" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M9 20C9 17.2386 11.2386 15 14 15C16.7614 15 19 12.7614 19 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M15 4C15 6.76142 12.7614 9 10 9C7.23858 9 5 11.2386 5 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span class="text-xl font-bold tracking-tight text-slate-900">
+                        <span class="text-blue-600">my</span>dns<span class="text-slate-500 font-medium">.network</span>
+                    </span>
+                </a>
             </div>
         </div>
-    </nav>
+    </header>
 
-    <div class="container">
-        <div class="starter-template">
-            <h1>Welcome to mydns.network</h1>
-            <p class="lead">
-                Simple privacy aware, completely free, DNS resolution for your home, or business
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+        
+        <!-- Hero Section -->
+        <div class="text-center mb-16">
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900">
+                Your Private, Secure DNS.
+            </h1>
+            <p class="mt-6 max-w-3xl mx-auto text-lg text-slate-600">
+                A simple, privacy-aware, and completely free DNS resolution service for your home or business.
             </p>
-    
-            <div class="card text-white bg-primary">
-                <div class="card-header">
-                    <h5>freedom</h5>
-                </div>
-                <div class="card-body text-black bg-white">
-                    <p>freedom is our no-filtering, no-logging, privacy aware resolver available over DNS-over-HTTPS/DNS-over-TLS</p>
-
-                    <p>
-                        <strong>DNS-over-HTTPS (DoH):</strong> https://freedom.mydns.network/dns-query<br />
-                        <strong>DNS-over-TLS (DoT):</strong> freedom.mydns.network
-                    </p>
-                </div>
-            </div>
-            <p>&nbsp;</p>
-
-            <div class="card text-white bg-primary">
-                <div class="card-header">
-                    <h5>paranoia</h5>
-                </div>
-                <div class="card-body text-black bg-white">
-                    <p>paranoid is our no-filtering, no-logging, privacy aware resolver available over DNS-over-HTTPS/DNS-over-TLS.<br /><strong>paranoia does not use Google or Cloudflare upstreams</strong></p>
-
-                    <p>
-                        <strong>DNS-over-HTTPS (DoH):</strong> https://paranoia.mydns.network/dns-query<br />
-                        <strong>DNS-over-TLS (DoT):</strong> paranoia.mydns.network
-                    </p>
-                </div>
-            </div>
-            <p>&nbsp;</p>
-
-            <div class="card text-white bg-primary">
-                <div class="card-header">
-                    <h5>adblock</h5>
-                </div>
-                <div class="card-body text-black bg-white">
-                    <p>adblock is our adblocking, no-logging, privacy aware resolver available over DNS-over-HTTPS/DNS-over-TLS.</p>
-
-                    <p>
-                        <strong>DNS-over-HTTPS (DoH):</strong> https://adblock.mydns.network/dns-query<br />
-                        <strong>DNS-over-TLS (DoT):</strong> adblock.mydns.network
-                    </p>
-                </div>
-            </div>
-            <p>&nbsp;</p>
-
-            <div class="card text-white bg-primary">
-                <div class="card-header">
-                    <h5>family</h5>
-                </div>
-                <div class="card-body text-black bg-white">
-                    <p>family is our adblocking, adult content blocking, no-logging, privacy aware resolver available over DNS-over-HTTPS/DNS-over-TLS.</p>
-
-                    <p>
-                        <strong>DNS-over-HTTPS (DoH):</strong> https://family.mydns.network/dns-query<br />
-                        <strong>DNS-over-TLS (DoT):</strong> family.mydns.network
-                    </p>
-                </div>
-            </div>
-            <p>&nbsp;</p>
         </div>
-    </div>
 
-    <footer class="footer">
-        <div class="container">
-            <p class="text-muted">
-                &copy;
-                <script type="text/javascript">document.write(new Date().getFullYear());</script> mydns.network - <a
-                    href="https://github.com/matthewgall/doh-proxy">GitHub</a>
+        <!-- Resolver Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Freedom Card -->
+            <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col border-t-4 border-blue-500">
+                <div class="p-6 flex items-center">
+                    <div class="flex-shrink-0 bg-blue-100 text-blue-600 rounded-full p-3 mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </div>
+                    <h3 class="text-2xl font-semibold text-slate-900">freedom</h3>
+                </div>
+                <div class="p-6 pt-0 flex-grow">
+                    <p class="text-slate-600 mb-6">A no-filtering, no-logging, privacy-aware resolver for unrestricted internet access.</p>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center bg-slate-100 p-3 rounded-lg">
+                            <span class="font-mono text-sm text-slate-700 truncate pr-2">https://freedom.mydns.network/dns-query</span>
+                            <button class="btn-copy flex-shrink-0" data-clipboard-text="https://freedom.mydns.network/dns-query" aria-label="Copy DoH URL"></button>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-100 p-3 rounded-lg">
+                            <span class="font-mono text-sm text-slate-700 truncate pr-2">freedom.mydns.network</span>
+                            <button class="btn-copy flex-shrink-0" data-clipboard-text="freedom.mydns.network" aria-label="Copy DoT URL"></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Paranoia Card -->
+            <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col border-t-4 border-purple-500">
+                <div class="p-6 flex items-center">
+                    <div class="flex-shrink-0 bg-purple-100 text-purple-600 rounded-full p-3 mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                    </div>
+                    <h3 class="text-2xl font-semibold text-slate-900">paranoia</h3>
+                </div>
+                <div class="p-6 pt-0 flex-grow">
+                    <p class="text-slate-600 mb-6">Maximum privacy. This resolver avoids using Google or Cloudflare as upstream providers.</p>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center bg-slate-100 p-3 rounded-lg">
+                            <span class="font-mono text-sm text-slate-700 truncate pr-2">https://paranoia.mydns.network/dns-query</span>
+                            <button class="btn-copy flex-shrink-0" data-clipboard-text="https://paranoia.mydns.network/dns-query" aria-label="Copy DoH URL"></button>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-100 p-3 rounded-lg">
+                            <span class="font-mono text-sm text-slate-700 truncate pr-2">paranoia.mydns.network</span>
+                            <button class="btn-copy flex-shrink-0" data-clipboard-text="paranoia.mydns.network" aria-label="Copy DoT URL"></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Adblock Card -->
+            <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col border-t-4 border-red-500">
+                <div class="p-6 flex items-center">
+                    <div class="flex-shrink-0 bg-red-100 text-red-600 rounded-full p-3 mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                    </div>
+                    <h3 class="text-2xl font-semibold text-slate-900">adblock</h3>
+                </div>
+                <div class="p-6 pt-0 flex-grow">
+                    <p class="text-slate-600 mb-6">Blocks known ad servers and trackers to clean up your browsing experience.</p>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center bg-slate-100 p-3 rounded-lg">
+                            <span class="font-mono text-sm text-slate-700 truncate pr-2">https://adblock.mydns.network/dns-query</span>
+                            <button class="btn-copy flex-shrink-0" data-clipboard-text="https://adblock.mydns.network/dns-query" aria-label="Copy DoH URL"></button>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-100 p-3 rounded-lg">
+                            <span class="font-mono text-sm text-slate-700 truncate pr-2">adblock.mydns.network</span>
+                            <button class="btn-copy flex-shrink-0" data-clipboard-text="adblock.mydns.network" aria-label="Copy DoT URL"></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Family Card -->
+            <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col border-t-4 border-emerald-500">
+                <div class="p-6 flex items-center">
+                    <div class="flex-shrink-0 bg-emerald-100 text-emerald-600 rounded-full p-3 mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </div>
+                    <h3 class="text-2xl font-semibold text-slate-900">family</h3>
+                </div>
+                <div class="p-6 pt-0 flex-grow">
+                    <p class="text-slate-600 mb-6">Includes adblocking and blocks access to adult content. Safe for all ages.</p>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center bg-slate-100 p-3 rounded-lg">
+                            <span class="font-mono text-sm text-slate-700 truncate pr-2">https://family.mydns.network/dns-query</span>
+                            <button class="btn-copy flex-shrink-0" data-clipboard-text="https://family.mydns.network/dns-query" aria-label="Copy DoH URL"></button>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-100 p-3 rounded-lg">
+                            <span class="font-mono text-sm text-slate-700 truncate pr-2">family.mydns.network</span>
+                            <button class="btn-copy flex-shrink-0" data-clipboard-text="family.mydns.network" aria-label="Copy DoT URL"></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- "How to Use" Section -->
+        <div class="mt-16 sm:mt-24">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">Get Started in Seconds</h2>
+                <p class="mt-4 max-w-2xl mx-auto text-lg text-slate-600">Use our resolvers anywhere with these easy-to-follow guides.</p>
+            </div>
+
+            <div class="max-w-4xl mx-auto">
+                <!-- Main Tabs Navigation -->
+                <div class="border-b border-slate-200">
+                    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                        <button class="main-tab-btn tab-active whitespace-nowrap py-4 px-1 border-b-2 font-semibold text-base" data-tab="main-content-platform-guides">
+                            Platform Guides
+                        </button>
+                        <button class="main-tab-btn text-slate-500 hover:text-slate-700 whitespace-nowrap py-4 px-1 border-b-2 border-transparent font-semibold text-base" data-tab="main-content-code-examples">
+                            Code Examples
+                        </button>
+                    </nav>
+                </div>
+                
+                <!-- Main Tabs Content -->
+                <div class="mt-8">
+                    <!-- Platform Guides Content -->
+                    <div class="main-tab-content" id="main-content-platform-guides">
+                        <div class="bg-white p-6 sm:p-8 rounded-xl shadow-md border">
+                            <!-- Platform Tabs -->
+                             <div class="border-b border-slate-200">
+                                <nav class="-mb-px flex space-x-6 overflow-x-auto" aria-label="Platform Tabs">
+                                    <button class="platform-tab-btn tab-active shrink-0 py-3 px-1 border-b-2 font-medium text-sm" data-tab="platform-content-windows">Windows</button>
+                                    <button class="platform-tab-btn text-slate-500 hover:text-slate-700 shrink-0 py-3 px-1 border-b-2 border-transparent font-medium text-sm" data-tab="platform-content-macos">macOS</button>
+                                    <button class="platform-tab-btn text-slate-500 hover:text-slate-700 shrink-0 py-3 px-1 border-b-2 border-transparent font-medium text-sm" data-tab="platform-content-linux">Linux</button>
+                                    <button class="platform-tab-btn text-slate-500 hover:text-slate-700 shrink-0 py-3 px-1 border-b-2 border-transparent font-medium text-sm" data-tab="platform-content-android">Android</button>
+                                    <button class="platform-tab-btn text-slate-500 hover:text-slate-700 shrink-0 py-3 px-1 border-b-2 border-transparent font-medium text-sm" data-tab="platform-content-ios">iOS</button>
+                                </nav>
+                            </div>
+                            <!-- Platform Content -->
+                            <div class="pt-8">
+                                <div class="platform-tab-content" id="platform-content-windows">
+                                    <h3 class="text-xl font-bold text-slate-800 mb-4">Windows Setup</h3>
+                                    <p class="text-slate-600 mb-6">On <strong class="font-semibold text-slate-700">Windows 11</strong>, you can set up DNS-over-HTTPS (DoH) system-wide for all applications. For other versions, you can configure it within your web browser.</p>
+                                    <div class="space-y-4">
+                                        <!-- Accordion for Browsers -->
+                                        <div class="accordion-item border rounded-lg">
+                                            <button class="accordion-button flex justify-between items-center w-full p-4 text-left font-semibold text-slate-700"><span>Google Chrome</span> <svg class="accordion-arrow h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></button>
+                                            <div class="accordion-content"><div class="p-4 border-t text-slate-600"><ol class="list-decimal list-inside space-y-2"><li>Navigate to <code class="text-sm bg-slate-100 p-1 rounded">chrome://settings/security</code></li><li>Scroll down and enable <strong class="font-semibold text-slate-700">"Use secure DNS"</strong>.</li><li>Select <strong class="font-semibold text-slate-700">"With Custom"</strong> and enter a DoH URL from above (e.g., `https://freedom.mydns.network/dns-query`).</li></ol></div></div>
+                                        </div>
+                                        <div class="accordion-item border rounded-lg">
+                                            <button class="accordion-button flex justify-between items-center w-full p-4 text-left font-semibold text-slate-700"><span>Mozilla Firefox</span> <svg class="accordion-arrow h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></button>
+                                            <div class="accordion-content"><div class="p-4 border-t text-slate-600"><ol class="list-decimal list-inside space-y-2"><li>Go to <strong class="font-semibold text-slate-700">Settings → Privacy & Security</strong>.</li><li>Scroll to the bottom and find <strong class="font-semibold text-slate-700">"Enable DNS over HTTPS"</strong>.</li><li>Select <strong class="font-semibold text-slate-700">"Max Protection"</strong>, click <strong class="font-semibold text-slate-700">"Choose a provider..."</strong>, select <strong class="font-semibold text-slate-700">"Custom"</strong>, and enter a DoH URL.</li></ol></div></div>
+                                        </div>
+                                         <div class="accordion-item border rounded-lg">
+                                            <button class="accordion-button flex justify-between items-center w-full p-4 text-left font-semibold text-slate-700"><span>Microsoft Edge</span> <svg class="accordion-arrow h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></button>
+                                            <div class="accordion-content"><div class="p-4 border-t text-slate-600"><ol class="list-decimal list-inside space-y-2"><li>Navigate to <code class="text-sm bg-slate-100 p-1 rounded">edge://settings/privacy</code></li><li>Scroll down to the <strong class="font-semibold text-slate-700">Security</strong> section and enable <strong class="font-semibold text-slate-700">"Use secure DNS"</strong>.</li><li>Select <strong class="font-semibold text-slate-700">"Choose a service provider"</strong> and enter a DoH URL.</li></ol></div></div>
+                                        </div>
+                                        <div class="accordion-item border rounded-lg">
+                                            <button class="accordion-button flex justify-between items-center w-full p-4 text-left font-semibold text-slate-700"><span>Brave Browser</span> <svg class="accordion-arrow h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></button>
+                                            <div class="accordion-content"><div class="p-4 border-t text-slate-600"><ol class="list-decimal list-inside space-y-2"><li>Navigate to <code class="text-sm bg-slate-100 p-1 rounded">brave://settings/security</code></li><li>Enable <strong class="font-semibold text-slate-700">"Use secure DNS"</strong>.</li><li>Select <strong class="font-semibold text-slate-700">"With Custom"</strong> and enter a DoH URL from above.</li></ol></div></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="platform-tab-content hidden" id="platform-content-macos">
+                                    <h3 class="text-xl font-bold text-slate-800 mb-4">macOS Setup</h3>
+                                    <p class="text-slate-600 mb-6">On <strong class="font-semibold text-slate-700">macOS Big Sur or newer</strong>, install a configuration profile for system-wide encrypted DNS. For a simpler setup, you can also configure it per-browser.</p>
+                                    
+                                    <div class="bg-slate-100 p-6 rounded-lg border">
+                                        <p class="block text-sm font-medium text-slate-700 mb-4">1. Select a Resolver</p>
+                                        <div id="macos-resolver-buttons" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+                                            <!-- macOS Freedom -->
+                                            <button class="resolver-btn p-4 border rounded-lg flex items-center gap-3 transition" data-resolver="freedom">
+                                                <div class="flex-shrink-0 bg-blue-100 text-blue-600 rounded-full h-8 w-8 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+                                                <span class="font-semibold text-sm">Freedom</span>
+                                            </button>
+                                            <!-- macOS Paranoia -->
+                                            <button class="resolver-btn p-4 border rounded-lg flex items-center gap-3 transition" data-resolver="paranoia">
+                                                <div class="flex-shrink-0 bg-purple-100 text-purple-600 rounded-full h-8 w-8 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg></div>
+                                                <span class="font-semibold text-sm">Paranoia</span>
+                                            </button>
+                                            <!-- macOS Adblock -->
+                                            <button class="resolver-btn p-4 border rounded-lg flex items-center gap-3 transition" data-resolver="adblock">
+                                                <div class="flex-shrink-0 bg-red-100 text-red-600 rounded-full h-8 w-8 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg></div>
+                                                <span class="font-semibold text-sm">Adblock</span>
+                                            </button>
+                                            <!-- macOS Family -->
+                                            <button class="resolver-btn p-4 border rounded-lg flex items-center gap-3 transition" data-resolver="family">
+                                                <div class="flex-shrink-0 bg-emerald-100 text-emerald-600 rounded-full h-8 w-8 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+                                                <span class="font-semibold text-sm">Family</span>
+                                            </button>
+                                        </div>
+                                         <div class="text-xs text-slate-500 text-center mb-4 p-2 bg-slate-200 rounded-md">
+                                            <p><strong class="font-semibold">Note:</strong> macOS will show a warning during installation. This is expected because the profile is generated securely and dynamically in your browser.</p>
+                                        </div>
+                                        <div>
+                                            <button id="macos-download-btn" class="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-5 py-3 text-base font-medium text-white hover:bg-blue-700 w-full">
+                                                Download Profile
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <h4 class="text-lg font-semibold text-slate-800 mt-6 mb-4">2. Install the Profile</h4>
+                                    <ol class="list-decimal list-inside space-y-2 text-slate-600">
+                                        <li>Double-click the downloaded <strong class="font-semibold text-slate-700">.mobileconfig</strong> file.</li>
+                                        <li><strong class="font-semibold text-slate-700">System Settings</strong> will open. Click <strong class="font-semibold text-slate-700">Install</strong> and follow the prompts.</li>
+                                        <li>You can view installed profiles under <strong class="font-semibold text-slate-700">System Settings → Privacy & Security → Profiles</strong>.</li>
+                                    </ol>
+                                </div>
+
+                                <div class="platform-tab-content hidden" id="platform-content-linux">
+                                    <h3 class="text-xl font-bold text-slate-800 mb-4">Linux Setup (systemd-resolved)</h3>
+                                    <p class="text-slate-600 mb-6">For modern Linux distributions using `systemd-resolved`, you can enable system-wide DNS-over-TLS.</p>
+                                    <ol class="list-decimal list-inside space-y-2 text-slate-600 mb-6">
+                                        <li>Edit the configuration file: <code class="text-sm bg-slate-100 p-1 rounded">sudo nano /etc/systemd/resolved.conf</code></li>
+                                        <li>Uncomment and edit the following lines under the `[Resolve]` section:</li>
+                                    </ol>
+                                    <div class="bg-slate-800 rounded-xl shadow-lg relative mb-6">
+                                        <pre class="p-6 text-sm text-slate-200 overflow-x-auto rounded-xl"><code id="code-linux-config">DNS=<span class="text-emerald-300"># Optional fallback DNS</span>
+FallbackDNS=
+Domains=~.
+DNSOverTLS=yes
+DNSSEC=yes
+</code></pre>
+                                    </div>
+                                     <ol class="list-decimal list-inside space-y-2 text-slate-600" start="3">
+                                        <li>Add one of our DoT hostnames to the `DNS=` line. For example: `DNS=freedom.mydns.network`</li>
+                                        <li>Save the file and restart the service: <code class="text-sm bg-slate-100 p-1 rounded">sudo systemctl restart systemd-resolved</code></li>
+                                    </ol>
+                                </div>
+                                <div class="platform-tab-content hidden" id="platform-content-android">
+                                    <h3 class="text-xl font-bold text-slate-800 mb-4">Android Setup</h3>
+                                    <p class="text-slate-600 mb-6"><strong class="font-semibold text-slate-700">Android 9+</strong> supports Private DNS, which uses DNS-over-TLS (DoT) to encrypt your queries. Later versions, like <strong class="font-semibold text-slate-700">Android 11+</strong>, also add support for DNS-over-HTTPS (DoH), though DoT is the simplest to configure system-wide via the settings below.</p>
+                                    <ol class="list-decimal list-inside space-y-2 text-slate-600">
+                                        <li>Go to <strong class="font-semibold text-slate-700">Settings → Network & internet</strong>.</li>
+                                        <li>Tap on <strong class="font-semibold text-slate-700">Private DNS</strong>.</li>
+                                        <li>Select <strong class="font-semibold text-slate-700">Private DNS provider hostname</strong>.</li>
+                                        <li>Enter a DoT address (e.g., `freedom.mydns.network`) and tap <strong class="font-semibold text-slate-700">Save</strong>.</li>
+                                    </ol>
+                                </div>
+                                <div class="platform-tab-content hidden" id="platform-content-ios">
+                                    <h3 class="text-xl font-bold text-slate-800 mb-4">iOS Setup</h3>
+                                    <p class="text-slate-600 mb-6">On <strong class="font-semibold text-slate-700">iOS 14+</strong>, you need to install a configuration profile to enable encrypted DNS system-wide. Use the tool below to generate a profile for your chosen resolver.</p>
+                                    
+                                    <div class="bg-slate-100 p-6 rounded-lg border">
+                                        <p class="block text-sm font-medium text-slate-700 mb-4">1. Select a Resolver</p>
+                                        <div id="ios-resolver-buttons" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+                                            <!-- iOS Freedom -->
+                                            <button class="resolver-btn p-4 border rounded-lg flex items-center gap-3 transition" data-resolver="freedom">
+                                                <div class="flex-shrink-0 bg-blue-100 text-blue-600 rounded-full h-8 w-8 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+                                                <span class="font-semibold text-sm">Freedom</span>
+                                            </button>
+                                            <!-- iOS Paranoia -->
+                                            <button class="resolver-btn p-4 border rounded-lg flex items-center gap-3 transition" data-resolver="paranoia">
+                                                <div class="flex-shrink-0 bg-purple-100 text-purple-600 rounded-full h-8 w-8 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg></div>
+                                                <span class="font-semibold text-sm">Paranoia</span>
+                                            </button>
+                                            <!-- iOS Adblock -->
+                                            <button class="resolver-btn p-4 border rounded-lg flex items-center gap-3 transition" data-resolver="adblock">
+                                                <div class="flex-shrink-0 bg-red-100 text-red-600 rounded-full h-8 w-8 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg></div>
+                                                <span class="font-semibold text-sm">Adblock</span>
+                                            </button>
+                                            <!-- iOS Family -->
+                                            <button class="resolver-btn p-4 border rounded-lg flex items-center gap-3 transition" data-resolver="family">
+                                                <div class="flex-shrink-0 bg-emerald-100 text-emerald-600 rounded-full h-8 w-8 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+                                                <span class="font-semibold text-sm">Family</span>
+                                            </button>
+                                        </div>
+                                         <div class="text-xs text-slate-500 text-center mb-4 p-2 bg-slate-200 rounded-md">
+                                            <p><strong class="font-semibold">Note:</strong> iOS will show a "Not Verified" warning during installation. This is expected because the profile is generated securely and dynamically in your browser.</p>
+                                        </div>
+                                        <div>
+                                            <button id="ios-download-btn" class="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-5 py-3 text-base font-medium text-white hover:bg-blue-700 w-full">
+                                                Download Profile
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <h4 class="text-lg font-semibold text-slate-800 mt-6 mb-4">2. Install the Profile</h4>
+                                    <ol class="list-decimal list-inside space-y-2 text-slate-600">
+                                        <li>After downloading, open <strong class="font-semibold text-slate-700">Settings</strong> and tap on <strong class="font-semibold text-slate-700">Profile Downloaded</strong>.</li>
+                                        <li>Tap <strong class="font-semibold text-slate-700">Install</strong> in the top-right corner and enter your passcode.</li>
+                                        <li>Tap <strong class="font-semibold text-slate-700">Install</strong> again to confirm.</li>
+                                    </ol>
+
+                                    <h4 class="text-lg font-semibold text-slate-800 mt-6 mb-4">3. Activate the Profile</h4>
+                                    <ol class="list-decimal list-inside space-y-2 text-slate-600">
+                                        <li>Go to <strong class="font-semibold text-slate-700">Settings → General → VPN & Device Management</strong>.</li>
+                                        <li>Tap on <strong class="font-semibold text-slate-700">DNS</strong> and select the newly installed profile.</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Code Examples Content -->
+                    <div class="main-tab-content hidden" id="main-content-code-examples">
+                        <div class="bg-white p-6 sm:p-8 rounded-xl shadow-md border space-y-8">
+                            <!-- cURL Section -->
+                            <div>
+                                <h4 class="text-lg font-semibold text-slate-800 mb-2">cURL Example</h4>
+                                <p class="text-slate-600 mb-4">Quickly test any resolver from your command line.</p>
+                                <div class="bg-slate-800 rounded-xl shadow-lg relative">
+                                    <button class="btn-copy-code absolute top-4 right-4" data-clipboard-target="#code-curl"></button>
+                                    <pre class="p-6 text-sm text-slate-200 overflow-x-auto rounded-xl"><code id="code-curl"><span class="text-sky-300">curl</span> <span class="text-slate-400">-H</span> <span class="text-emerald-300">'accept: application/dns-json'</span> \
+    <span class="text-emerald-300">'https://freedom.mydns.network/resolve?name=example.com&type=A'</span></code></pre>
+                                </div>
+                                <p class="text-sm font-semibold text-slate-600 mt-4 mb-2">Example Response:</p>
+                                <div id="response-curl" class="json-formatter"></div>
+                            </div>
+
+                            <!-- JavaScript Section -->
+                            <div>
+                                <h4 class="text-lg font-semibold text-slate-800 mb-2">JavaScript (Fetch API)</h4>
+                                <p class="text-slate-600 mb-4">Use the Fetch API with modern async/await syntax in your web projects.</p>
+                                <div class="bg-slate-800 rounded-xl shadow-lg relative">
+                                    <button class="btn-copy-code absolute top-4 right-4" data-clipboard-target="#code-js"></button>
+                                    <pre class="p-6 text-sm text-slate-200 overflow-x-auto rounded-xl"><code id="code-js"><span class="text-purple-400">async function</span> <span class="text-yellow-300">getDnsRecords</span>() {
+  <span class="text-purple-400">const</span> url <span class="text-slate-400">=</span> <span class="text-emerald-300">'https://freedom.mydns.network/resolve?name=example.com'</span>;
+  <span class="text-purple-400">try</span> {
+    <span class="text-purple-400">const</span> response <span class="text-slate-400">=</span> <span class="text-purple-400">await</span> <span class="text-sky-300">fetch</span>(url);
+    <span class="text-purple-400">if</span> (!response.<span class="text-sky-300">ok</span>) {
+      <span class="text-purple-400">throw new</span> <span class="text-yellow-300">Error</span>(<span class="text-emerald-300">`HTTP error! status: ${response.status}`</span>);
+    }
+    <span class="text-purple-400">const</span> data <span class="text-slate-400">=</span> <span class="text-purple-400">await</span> response.<span class="text-sky-300">json</span>();
+    <span class="text-sky-300">console</span>.<span class="text-sky-300">log</span>(data);
+  } <span class="text-purple-400">catch</span> (error) {
+    <span class="text-sky-300">console</span>.<span class="text-sky-300">error</span>(<span class="text-emerald-300">'Error fetching DNS records:'</span>, error);
+  }
+}
+
+<span class="text-yellow-300">getDnsRecords</span>();</code></pre>
+                                </div>
+                                <p class="text-sm font-semibold text-slate-600 mt-4 mb-2">Example Console Output:</p>
+                                <div id="response-js" class="json-formatter"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-100 border-t border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between">
+            <p class="text-center sm:text-left text-sm text-slate-500 mb-4 sm:mb-0">
+                &copy; <script>document.write(new Date().getFullYear())</script> mydns.network
             </p>
+            <div class="flex items-center space-x-4">
+                <a href="https://github.com/matthewgall/doh-proxy" target="_blank" rel="noopener noreferrer" class="text-slate-500 hover:text-slate-700 transition-colors">
+                    <span class="sr-only">GitHub</span>
+                    <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.168 6.839 9.49.5.092.682-.217.682-.482 0-.237-.009-.868-.014-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.031-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.378.203 2.398.1 2.651.64.7 1.03 1.595 1.03 2.688 0 3.848-2.338 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.001 10.001 0 0022 12c0-5.523-4.477-10-10-10z" clip-rule="evenodd" /></svg>
+                </a>
+                <a href="https://uk.linkedin.com/in/thematthewgall" target="_blank" rel="noopener noreferrer" class="text-slate-500 hover:text-slate-700 transition-colors">
+                     <span class="sr-only">LinkedIn</span>
+                    <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                </a>
+            </div>
         </div>
     </footer>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.min.js" integrity="sha512-WW8/jxkELe2CAiE4LvQfwm1rajOS8PHasCCx+knHG0gBHt8EXxS6T6tJRTGuDQVnluuAvMxWF4j8SNFDKceLFg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <!-- JavaScript for Interactivity -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // --- Copy-to-Clipboard Logic ---
+            const copyIconSVG = `<svg class="h-5 w-5 text-slate-500 group-hover:text-slate-700 transition" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>`;
+            const checkIconSVG = `<svg class="h-5 w-5 text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`;
+
+            function fallbackCopyTextToClipboard(text, button) {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                
+                textArea.style.top = "0";
+                textArea.style.left = "0";
+                textArea.style.position = "fixed";
+
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        button.innerHTML = checkIconSVG;
+                        setTimeout(() => { button.innerHTML = copyIconSVG; }, 2000);
+                    }
+                } catch (err) {
+                    console.error('Fallback: Oops, unable to copy', err);
+                }
+
+                document.body.removeChild(textArea);
+            }
+
+            function setupCopyButtons(selector, isCodeBlock = false) {
+                document.querySelectorAll(selector).forEach(button => {
+                    button.classList.add('p-1.5', 'rounded-md', 'hover:bg-slate-200', 'group', 'transition');
+                    if (isCodeBlock) button.classList.add('hover:bg-slate-700');
+                    button.innerHTML = copyIconSVG;
+                    button.addEventListener('click', () => {
+                        const textToCopy = isCodeBlock ? document.querySelector(button.dataset.clipboardTarget).innerText : button.dataset.clipboardText;
+                        fallbackCopyTextToClipboard(textToCopy, button);
+                    });
+                });
+            }
+            setupCopyButtons('.btn-copy');
+            setupCopyButtons('.btn-copy-code', true);
+
+            // --- Simplified Tabs Logic ---
+            function setupTabs(btnSelector, contentSelector, activeClass) {
+                const tabButtons = document.querySelectorAll(btnSelector);
+                tabButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        const nav = button.closest('nav');
+                        nav.querySelectorAll(btnSelector).forEach(btn => {
+                            btn.classList.remove(activeClass, 'text-slate-800');
+                            btn.classList.add('text-slate-500', 'hover:text-slate-700', 'border-transparent');
+                            
+                            const content = document.getElementById(btn.dataset.tab);
+                            if (content) content.classList.add('hidden');
+                        });
+
+                        button.classList.add(activeClass, 'text-slate-800');
+                        button.classList.remove('text-slate-500', 'hover:text-slate-700', 'border-transparent');
+                        const activeContent = document.getElementById(button.dataset.tab);
+                        if (activeContent) activeContent.classList.remove('hidden');
+                    });
+                });
+            }
+            setupTabs('.main-tab-btn', '.main-tab-content', 'tab-active');
+            setupTabs('.platform-tab-btn', '.platform-tab-content', 'tab-active');
+
+            // --- Accordion Logic ---
+            document.querySelectorAll('.accordion-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    const content = button.nextElementSibling;
+                    const isOpen = button.classList.contains('open');
+                    
+                    const parentContainer = button.closest('.space-y-4');
+                    if (parentContainer) {
+                        parentContainer.querySelectorAll('.accordion-button').forEach(btn => {
+                            if (btn !== button) {
+                                btn.classList.remove('open');
+                                btn.nextElementSibling.classList.remove('open');
+                            }
+                        });
+                    }
+                    button.classList.toggle('open');
+                    content.classList.toggle('open');
+                });
+            });
+            
+            // --- Profile Generator Logic ---
+            const resolverUrls = {
+                freedom: 'https://freedom.mydns.network/dns-query',
+                paranoia: 'https://paranoia.mydns.network/dns-query',
+                adblock: 'https://adblock.mydns.network/dns-query',
+                family: 'https://family.mydns.network/dns-query'
+            };
+
+            function generateUUID() {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16).toUpperCase();
+                });
+            }
+
+            function createMobileConfigFile(resolverName, dohUrl) {
+                const profileName = `mydns.network - ${resolverName.charAt(0).toUpperCase() + resolverName.slice(1)}`;
+                const payloadUUID = generateUUID();
+                const dnsUUID = generateUUID();
+
+                return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>PayloadContent</key>
+    <array>
+        <dict>
+            <key>DNSSettings</key>
+            <dict>
+                <key>DNSProtocol</key>
+                <string>HTTPS</string>
+                <key>ServerURL</key>
+                <string>${dohUrl}</string>
+            </dict>
+            <key>PayloadDisplayName</key>
+            <string>Encrypted DNS</string>
+            <key>PayloadIdentifier</key>
+            <string>com.apple.dnsSettings.managed.${dnsUUID}</string>
+            <key>PayloadType</key>
+            <string>com.apple.dnsSettings.managed</string>
+            <key>PayloadUUID</key>
+            <string>${dnsUUID}</string>
+            <key>PayloadVersion</key>
+            <integer>1</integer>
+        </dict>
+    </array>
+    <key>PayloadDisplayName</key>
+    <string>${profileName}</string>
+    <key>PayloadIdentifier</key>
+    <string>network.mydns.profile</string>
+    <key>PayloadRemovalDisallowed</key>
+    <false/>
+    <key>PayloadType</key>
+    <string>Configuration</string>
+    <key>PayloadUUID</key>
+    <string>${payloadUUID}</string>
+    <key>PayloadVersion</key>
+    <integer>1</integer>
+</dict>
+</plist>`;
+            }
+
+            function downloadFile(filename, content) {
+                const element = document.createElement('a');
+                element.setAttribute('href', 'data:application/x-apple-aspen-config;charset=utf-8,' + encodeURIComponent(content));
+                element.setAttribute('download', filename);
+                element.style.display = 'none';
+                document.body.appendChild(element);
+                element.click();
+                document.body.removeChild(element);
+            }
+
+            // iOS Generator
+            const iosResolverButtons = document.querySelectorAll('#ios-resolver-buttons .resolver-btn');
+            const iosDownloadButton = document.getElementById('ios-download-btn');
+            let iosSelectedResolver = 'freedom';
+            
+            iosResolverButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    iosSelectedResolver = button.dataset.resolver;
+                    iosResolverButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                });
+            });
+            
+            if (iosDownloadButton) {
+                iosDownloadButton.addEventListener('click', () => {
+                    const dohUrl = resolverUrls[iosSelectedResolver];
+                    const fileContent = createMobileConfigFile(iosSelectedResolver, dohUrl);
+                    downloadFile(`mydns-${iosSelectedResolver}-ios.mobileconfig`, fileContent);
+                });
+            }
+            document.querySelector('#ios-resolver-buttons .resolver-btn[data-resolver="freedom"]').classList.add('active');
+
+            // macOS Generator
+            const macosResolverButtons = document.querySelectorAll('#macos-resolver-buttons .resolver-btn');
+            const macosDownloadButton = document.getElementById('macos-download-btn');
+            let macosSelectedResolver = 'freedom';
+
+            macosResolverButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    macosSelectedResolver = button.dataset.resolver;
+                    macosResolverButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                });
+            });
+
+            if (macosDownloadButton) {
+                macosDownloadButton.addEventListener('click', () => {
+                    const dohUrl = resolverUrls[macosSelectedResolver];
+                    const fileContent = createMobileConfigFile(macosSelectedResolver, dohUrl);
+                    downloadFile(`mydns-${macosSelectedResolver}-macos.mobileconfig`, fileContent);
+                });
+            }
+             document.querySelector('#macos-resolver-buttons .resolver-btn[data-resolver="freedom"]').classList.add('active');
+        
+            // --- Interactive JSON Viewer ---
+            const exampleJson = { "Status": 0, "TC": false, "RD": true, "RA": true, "AD": false, "CD": false, "Question": [ { "name": "example.com.", "type": 1 } ], "Answer": [ { "name": "example.com.", "type": 1, "TTL": 30, "data": "23.220.75.245" }, { "name": "example.com.", "type": 1, "TTL": 30, "data": "23.192.228.80" }, { "name": "example.com.", "type": 1, "TTL": 30, "data": "23.192.228.84" }, { "name": "example.com.", "type": 1, "TTL": 30, "data": "23.215.0.136" }, { "name": "example.com.", "type": 1, "TTL": 30, "data": "23.215.0.138" }, { "name": "example.com.", "type": 1, "TTL": 30, "data": "23.220.75.232" } ], "Comment": "Response from [one of our providers]" };
+
+            function formatJson(obj) {
+                if (typeof obj !== 'object' || obj === null) {
+                    if (typeof obj === 'string') return `<span class="json-string">"${obj}"</span>`;
+                    if (typeof obj === 'number') return `<span class="json-number">${obj}</span>`;
+                    if (typeof obj === 'boolean') return `<span class="json-boolean">${obj}</span>`;
+                    return obj;
+                }
+
+                const isArray = Array.isArray(obj);
+                let html = isArray ? '[' : '{';
+                
+                const keys = Object.keys(obj);
+                if (keys.length === 0) {
+                    html += isArray ? ']' : '}';
+                    return html;
+                }
+                
+                const isCollapsible = keys.length > 0;
+                if (isCollapsible) {
+                    html = `<div class="collapsible collapsed"><span class="collapser"></span>${isArray ? '[' : '{'}<span class="ellipsis">...${isArray ? ']' : '}'}</span><div class="content">`;
+                }
+
+                html += keys.map((key, index) => {
+                    const value = obj[key];
+                    const comma = index < keys.length - 1 ? ',' : '';
+                    const keyHtml = isArray ? '' : `<span class="json-key">"${key}"</span>: `;
+                    return `<div>${keyHtml}${formatJson(value)}${comma}</div>`;
+                }).join('');
+                
+                if (isCollapsible) {
+                    html += `</div>${isArray ? ']' : '}'}</div>`;
+                } else {
+                     html += isArray ? ']' : '}';
+                }
+                return html;
+            }
+
+            function renderJson(targetId, jsonData) {
+                const target = document.getElementById(targetId);
+                if (target) {
+                    target.innerHTML = formatJson(jsonData);
+                    target.querySelectorAll('.collapser').forEach(el => {
+                        el.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            e.target.parentElement.classList.toggle('collapsed');
+                        });
+                    });
+                }
+            }
+
+            renderJson('response-curl', exampleJson);
+            renderJson('response-js', exampleJson);
+        });
+    </script>
 </body>
+
 </html>

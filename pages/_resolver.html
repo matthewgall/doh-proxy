@@ -4,69 +4,135 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>[HOSTNAME] - mydns.network</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
-    <title>[HOSTNAME]</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.2/cosmo/bootstrap.min.css" integrity="sha512-GVdrCO8+HISboPZQ1DEaBPFw9qrVh8rNqCOZXsk04l2s+kn/gHR8fTq2Hvxz1fkZdhjf5EQJVrxuRWLoXpcngA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="//mydns.network/style.css" >
+    <!-- Custom Styles -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
 </head>
 
-<body>
-    <nav class="navbar navbar-inverse navbar-fixed-top">
-        <div class="container">
-            <div class="navbar-header">
-                <a class="navbar-brand" href="https://mydns.network">mydns.network</a>
+<body class="bg-slate-50 text-slate-800 antialiased">
+
+    <!-- Header -->
+    <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-10 border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <a href="https://mydns.network" class="flex items-center gap-3">
+                    <svg class="h-8 w-auto text-blue-600" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4 12C4 7.58172 7.58172 4 12 4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12Z" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M9 20C9 17.2386 11.2386 15 14 15C16.7614 15 19 12.7614 19 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M15 4C15 6.76142 12.7614 9 10 9C7.23858 9 5 11.2386 5 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span class="text-xl font-bold tracking-tight text-slate-900">
+                        <span class="text-blue-600">my</span>dns<span class="text-slate-500 font-medium">.network</span>
+                    </span>
+                </a>
             </div>
         </div>
-    </nav>
+    </header>
 
-    <div class="container">
-        <div class="starter-template">
-            <h1>[HOSTNAME]</h1>
-            <p class="lead">
-                Simple privacy aware, completely free, DNS resolution for your home, or business
-            </p>
-    
-            <div class="card text-white bg-primary">
-                <div class="card-header">
-                    <h5>Usage</h5>
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+        
+        <div class="bg-white p-8 rounded-xl shadow-md border">
+            <!-- Hero Section -->
+            <div class="text-center mb-12">
+                <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900">
+                    [HOSTNAME]
+                </h1>
+                <p class="mt-4 max-w-2xl mx-auto text-lg text-slate-600">
+                    Simple, privacy-aware DNS resolution for your home or business.
+                </p>
+            </div>
+            
+            <!-- Usage Instructions -->
+            <div class="space-y-6">
+                <div>
+                    <h3 class="text-lg font-semibold text-slate-800 mb-2">How to Use</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center bg-slate-100 p-3 rounded-lg">
+                            <span class="font-mono text-sm text-slate-700 truncate pr-2">
+                                <strong class="font-semibold">DoH:</strong> https://[HOSTNAME]/dns-query
+                            </span>
+                            <button class="btn-copy flex-shrink-0" data-clipboard-text="https://[HOSTNAME]/dns-query" aria-label="Copy DoH URL"></button>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-100 p-3 rounded-lg">
+                            <span class="font-mono text-sm text-slate-700 truncate pr-2">
+                                <strong class="font-semibold">DoT:</strong> [HOSTNAME]
+                            </span>
+                            <button class="btn-copy flex-shrink-0" data-clipboard-text="[HOSTNAME]" aria-label="Copy DoT URL"></button>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body text-black bg-white">
-                    <p>Want to use this resolver? It's easy!</p>
 
-                    <p>
-                        <strong>DNS-over-HTTPS (DoH):</strong> https://[HOSTNAME]/dns-query<br />
-                        <strong>DNS-over-TLS (DoT):</strong> [HOSTNAME]
-                    </p>
+                <!-- Upstream Resolvers -->
+                <div>
+                    <h3 class="text-lg font-semibold text-slate-800 mb-2">Upstream Resolvers</h3>
+                    <p class="text-slate-600 mb-4">[HOSTNAME] randomly uses the following upstream DNS providers:</p>
+                    <div class="bg-slate-800 rounded-lg p-4 font-mono text-sm text-slate-300 overflow-x-auto">
+                        <pre><code>[RESOLVERS]</code></pre>
+                    </div>
                 </div>
             </div>
-            <p>&nbsp;</p>
-
-            <div class="card text-white bg-primary">
-                <div class="card-header">
-                    <h5>Resolvers</h5>
-                </div>
-                <div class="card-body text-black bg-white">
-                    <p>[HOSTNAME] uses the following upstream DNS resolvers at random:</p>
-<pre>[RESOLVERS]</pre>
-                </div>
-            </div>
-            <p>&nbsp;</p>
         </div>
-    </div>
+    </main>
 
-    <footer class="footer">
-        <div class="container">
-            <p class="text-muted">
-                &copy;
-                <script type="text/javascript">document.write(new Date().getFullYear());</script> mydns.network - <a
-                    href="https://github.com/matthewgall/doh-proxy">GitHub</a>
+    <!-- Footer -->
+    <footer class="bg-slate-100 border-t border-slate-200 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between">
+            <p class="text-center sm:text-left text-sm text-slate-500 mb-4 sm:mb-0">
+                &copy; <script>document.write(new Date().getFullYear())</script> mydns.network
             </p>
+             <a href="https://github.com/matthewgall/doh-proxy" target="_blank" rel="noopener noreferrer" class="text-slate-500 hover:text-slate-700 transition-colors">
+                <span class="sr-only">GitHub</span>
+                <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.168 6.839 9.49.5.092.682-.217.682-.482 0-.237-.009-.868-.014-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.031-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.378.203 2.398.1 2.651.64.7 1.03 1.595 1.03 2.688 0 3.848-2.338 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.001 10.001 0 0022 12c0-5.523-4.477-10-10-10z" clip-rule="evenodd" /></svg>
+            </a>
         </div>
     </footer>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.min.js" integrity="sha512-WW8/jxkELe2CAiE4LvQfwm1rajOS8PHasCCx+knHG0gBHt8EXxS6T6tJRTGuDQVnluuAvMxWF4j8SNFDKceLFg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const copyIconSVG = `<svg class="h-5 w-5 text-slate-500 group-hover:text-slate-700 transition" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>`;
+            const checkIconSVG = `<svg class="h-5 w-5 text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`;
+
+            function fallbackCopyTextToClipboard(text, button) {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    button.innerHTML = checkIconSVG;
+                    setTimeout(() => { button.innerHTML = copyIconSVG; }, 2000);
+                } catch (err) {
+                    console.error('Fallback: Unable to copy', err);
+                }
+                document.body.removeChild(textArea);
+            }
+
+            document.querySelectorAll('.btn-copy').forEach(button => {
+                button.classList.add('p-1.5', 'rounded-md', 'hover:bg-slate-200', 'group', 'transition');
+                button.innerHTML = copyIconSVG;
+                button.addEventListener('click', () => {
+                    fallbackCopyTextToClipboard(button.dataset.clipboardText, button);
+                });
+            });
+        });
+    </script>
 </body>
+
 </html>
