@@ -6,7 +6,6 @@ import * as dnsPacket from '@dnsquery/dns-packet';
 import Config from '../config.json';
 import Resolvers from '../resolvers.json';
 import Package from '../package-lock.json';
-import Html from '../pages/_resolver.html';
 
 const router = Router();
 
@@ -28,24 +27,47 @@ Array.prototype.sampleN = function(n: any) {
 	return result;
 }
 
-async function getDNSResponse(url: any) {
+async function getDNSResponse(url: any, env: any, family: any) {
 	let p: any = new URL(url).hostname;
-	let r: any = await fetch(url, {
-		headers: {
-			'Content-Type': 'application/dns-message'
-		}
-	})
+	try {
+		let r: any = await fetch(url, {
+			headers: {
+				'Content-Type': 'application/dns-message'
+			}
+		})
 
-	if (r.status !== 200) throw Promise.reject(`Encountered a non 200 response from ${p}`);
-	return r;
+		if (r.status !== 200) {
+			// Log non-200 response to Error Analytics Engine
+			env.ERROR_ANALYTICS.writeDataPoint({
+				'blobs': [p, `HTTP_${r.status}`], 
+				'doubles': [r.status],
+				'indexes': [family]
+			});
+			throw new Error(`HTTP ${r.status} from ${p}`);
+		}
+		return r;
+	} catch (e: any) {
+		// Log fetch errors to Analytics Engine
+		let errorType = 'FETCH_ERROR';
+		if (e.name === 'TypeError') errorType = 'NETWORK_ERROR';
+		if (e.message.includes('timeout')) errorType = 'TIMEOUT_ERROR';
+		if (e.message.includes('DNS')) errorType = 'DNS_ERROR';
+
+		env.ERROR_ANALYTICS.writeDataPoint({
+			'blobs': [p, errorType], 
+			'doubles': [],
+			'indexes': [family]
+		});
+		throw e;
+	}
 }
 
-function chooseResolvers(resolvers: any, q: any, family: any = "freedom", n: any = 3) {
+function chooseResolvers(resolvers: any, q: any, family: any = "freedom", n: any = 3, env: any) {
 	let p = [];
 	if (resolvers.length > n) {
 		for (let r of resolvers.sampleN(n)) {
 			try {
-				p.push(getDNSResponse(`${Resolvers[r][family]}?dns=${q}`))
+				p.push(getDNSResponse(`${Resolvers[r][family]}?dns=${q}`, env, family))
 			}
 			catch(e: any) {}
 		}
@@ -53,7 +75,7 @@ function chooseResolvers(resolvers: any, q: any, family: any = "freedom", n: any
 	else {
 		// Otherwise, pick one
 		try {
-			p.push(getDNSResponse(`${Resolvers[resolvers.sample()][family]}?dns=${q}`))
+			p.push(getDNSResponse(`${Resolvers[resolvers.sample()][family]}?dns=${q}`, env, family))
 		}
 		catch(e: any) {}
 	}
@@ -79,18 +101,28 @@ router.all('/resolve', async (request, env, context) => {
 
 	if (request.method == 'GET') {
 		if (request.query.name) name = request.query.name || null;
-		if (request.query.type) rrtype = request.query.type.toUpperCase();
+		if (request.query.type) {
+			const typeParam = Array.isArray(request.query.type) ? request.query.type[0] : request.query.type;
+			rrtype = typeParam.toUpperCase();
+		}
 
 		if (name == null) return new Response('Missing name in ?name=', { status: 400 })
+		
 	}
 
 	if (!['A', 'AAAA', 'DNSKEY', 'MX', 'NS', 'SRV', 'TXT'].includes(rrtype)) return new Response('Unsupported rrtype', { status: 400 })
 
-	// Next, we need to prepare a query
+	// Next, we need to prepare a query with DNSSEC enforcement
 	let query: any = dnsPacket.encode({
 		type: 'query',
 		id: getRandomInt(1, 65534),
-		flags: dnsPacket.RECURSION_DESIRED,
+		flags: dnsPacket.RECURSION_DESIRED, // CD flag is NOT set, enforcing DNSSEC validation
+		additionals: [{
+			type: 'OPT',
+			name: '.',
+			class: 4096, // UDP payload size is set via class field for OPT records
+			flags: dnsPacket.DNSSEC_OK // Request DNSSEC records
+		}],
 		questions: [{
 			type: rrtype,
 			name: name
@@ -112,7 +144,7 @@ router.all('/resolve', async (request, env, context) => {
 	}
 	if (family == "paranoia") family = "freedom";
 
-	let providers = chooseResolvers(resolver, query, family);
+	let providers = chooseResolvers(resolver, query, family, 3, env);
 	
 	// And send it off
 	let answer: any;
@@ -120,6 +152,7 @@ router.all('/resolve', async (request, env, context) => {
 		answer = await Promise.any(providers);
 	}
 	catch(e: any) {
+		console.log('ERROR in /resolve:', e);
 		return new Response('We encountered a server error. Please try again later', { status: 500 })
 	}
 
@@ -223,14 +256,48 @@ router.all('/dns-query', async (request, env, context) => {
 		q = Buffer.from(q);
 	}
 
+	// Decode, modify for DNSSEC enforcement, and re-encode the query
+	let decodedQuery: any;
+	try {
+		if (request.method == 'GET') {
+			decodedQuery = dnsPacket.decode(base64url.toBuffer(q));
+		} else {
+			decodedQuery = dnsPacket.decode(q);
+		}
+		
+		// Enforce DNSSEC: ensure CD flag is NOT set
+		decodedQuery.flags = decodedQuery.flags & ~dnsPacket.CHECKING_DISABLED; // Clear CD flag
+		decodedQuery.flags = decodedQuery.flags | dnsPacket.RECURSION_DESIRED; // Ensure RD is set
+		
+		// Add minimal EDNS0 with DNSSEC_OK flag
+		if (!decodedQuery.additionals) {
+			decodedQuery.additionals = [];
+		}
+		
+		decodedQuery.additionals.push({
+			type: 'OPT',
+			name: '.',
+			class: 512, // Smaller UDP payload size
+			flags: dnsPacket.DNSSEC_OK
+		});
+		
+		// Re-encode and convert to base64url
+		q = base64url(dnsPacket.encode(decodedQuery));
+		
+	} catch (e: any) {
+		console.log('DEBUG: DNSSEC enforcement failed:', e.message);
+		// Fall back to original query if modification fails
+		if (request.method == 'POST') {
+			q = base64url(q);
+		}
+	}
+
 	// Next, we prepare to send it on, first pick a resolver (by default, we use the default)
 	let resolver: any = Config['default'].resolvers
 	if (Object.keys(Config).includes(url.hostname)) {
 		// Check now for a resolvers set for the hostname the request came in on
 		resolver = Config[url.hostname].resolvers
 	}
-
-	if (request.method == 'POST') q = base64url(q);
 
 	// We also have to determine the resolver family, by default, freedom
 	let family = "freedom"
@@ -239,7 +306,7 @@ router.all('/dns-query', async (request, env, context) => {
 	}
 	if (family == "paranoia") family = "freedom";
 
-	let providers = chooseResolvers(resolver, q, family);
+	let providers = chooseResolvers(resolver, q, family, 3, env);
 	
 	// And send it off
 	let answer: any;
@@ -249,6 +316,7 @@ router.all('/dns-query', async (request, env, context) => {
 		a = await answer.arrayBuffer();
 	}
 	catch(e: any) {
+		console.log('ERROR in /dns-query:', e);
 		// So if we get here, something happened, so we'll try and build our own response
 		return new Response(`We encountered an error while performing this lookup: ${e}`, { status: 500 });
 	}
@@ -349,43 +417,124 @@ router.get('/resolver-usage', async (request, env) => {
 	return new Response(JSON.stringify(resp, null, 2), { headers: {'Content-Type': 'application/json'}})
 })
 
-router.get('/', async (request) => {
-	// First, we grab the hostname they asked for
-	let hostname: any = new URL(request.url).hostname
-	let resolver: any = Config['default'].resolvers;
+router.get('/error-analytics', async (request, env) => {
 	let url: any = new URL(request.url);
 	
-	if (Config[hostname]) {
-		// Check now for a resolvers set for the hostname the request came in on
-		resolver = Config[hostname].resolvers;
-	}
-
+	// Parse query parameters
+	const hours = parseInt(url.searchParams.get('hours') || '24');
+	const queryType = url.searchParams.get('type') || 'error-rates';
+	
+	// Check the hostname is valid and determine dataset
 	let family = "freedom"
 	if (url.hostname.includes('.mydns.network')) {
 		family = url.hostname.split('.')[0];
 	}
 	if (family == "paranoia") family = "freedom";
 
-	// Now to grab the resolver URLs
-	let resolvers: any = [];
-	for (let r of resolver) {
-		if (Resolvers[r][family]) resolvers.push(Resolvers[r][family])
+	let dataset = 'prod'
+	if (url.hostname.includes('.staging.')) dataset = 'dev'
+
+	let resp: any = { queryType, hours, dataset }
+
+	try {
+		let query = '';
+		
+		switch (queryType) {
+			case 'error-rates':
+				query = `SELECT blob1 AS provider, blob2 AS error_type, index1 AS resolver_family, COUNT() AS error_count FROM 'mydnsproxy-errors-${dataset}' WHERE timestamp > NOW() - INTERVAL '${hours}' HOUR GROUP BY provider, error_type, resolver_family ORDER BY error_count DESC;`;
+				break;
+				
+			case 'http-errors':
+				query = `SELECT blob1 AS provider, blob2 AS error_type, double1 AS http_status, COUNT() AS occurrences FROM 'mydnsproxy-errors-${dataset}' WHERE blob2 LIKE 'HTTP_%' AND timestamp > NOW() - INTERVAL '${hours}' HOUR GROUP BY provider, error_type, http_status ORDER BY occurrences DESC;`;
+				break;
+				
+			case 'reliability':
+				query = `SELECT blob1 AS provider, index1 AS resolver_family, COUNT() AS error_count FROM 'mydnsproxy-errors-${dataset}' WHERE timestamp > NOW() - INTERVAL '${hours}' HOUR GROUP BY provider, resolver_family ORDER BY error_count DESC;`;
+				break;
+				
+			case 'error-types':
+				query = `SELECT blob1 AS provider, CASE WHEN blob2 = 'NETWORK_ERROR' THEN 'Network Issues' WHEN blob2 = 'TIMEOUT_ERROR' THEN 'Timeout Issues' WHEN blob2 LIKE 'HTTP_%' THEN 'HTTP Errors' WHEN blob2 = 'DNS_ERROR' THEN 'DNS Resolution' ELSE 'Other' END AS issue_category, COUNT() AS count FROM 'mydnsproxy-errors-${dataset}' WHERE timestamp > NOW() - INTERVAL '${hours}' HOUR GROUP BY provider, issue_category ORDER BY provider, count DESC;`;
+				break;
+				
+			default:
+				return new Response(JSON.stringify({
+					error: 'Invalid query type',
+					validTypes: ['error-rates', 'http-errors', 'reliability', 'error-types']
+				}), { status: 400, headers: {'Content-Type': 'application/json'}});
+		}
+
+		let data: any = await fetch(`https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/analytics_engine/sql`, {
+			method: 'POST',
+			body: query,
+			headers: {
+				'Authorization': `Bearer ${env.CLOUDFLARE_ACCOUNT_TOKEN}`,
+			}
+		})
+		
+		if (data.status !== 200) {
+			resp.error = `Analytics API returned ${data.status}`;
+		} else {
+			data = await data.json();
+			resp.data = data.data;
+			resp.meta = data.meta;
+		}
+	}
+	catch(e: any) {
+		resp.error = e.message;
 	}
 
-	// This is going to be an amazing hack so I don't have to mess with KV
-	let data: any = Html;
+	return new Response(JSON.stringify(resp, null, 2), { headers: {'Content-Type': 'application/json'}})
+})
 
-	// And now we make some changes to the stored HTML
-	data = data.replaceAll('[HOSTNAME]', hostname);
-	data = data.replaceAll('[NAME]', hostname.replace('.mydns.network', ''));
-	data = data.replaceAll('[RESOLVERS]', resolvers.join('\n'))
+// Static asset routes
+router.get('/style.css', async (request, env) => {
+	return env.ASSETS.fetch(request);
+});
 
-	// And craft a new response
-	return new Response(data, {
+router.get('/', async (request, env) => {
+	const url = new URL(request.url);
+	
+	// Serve static index.html for main domain
+	if (url.hostname === 'mydns.network' || !url.hostname.includes('.mydns.network')) {
+		return env.ASSETS.fetch(new Request(`${url.origin}/index.html`));
+	}
+	
+	// Dynamic resolver pages for subdomains
+	const hostname = url.hostname;
+	let resolver: any = Config['default'].resolvers;
+	
+	if (Config[hostname as keyof typeof Config]) {
+		resolver = Config[hostname as keyof typeof Config].resolvers;
+	}
+
+	let family = "freedom"
+	if (hostname.includes('.mydns.network')) {
+		family = hostname.split('.')[0];
+	}
+	if (family == "paranoia") family = "freedom";
+
+	// Get resolver URLs
+	const resolvers: string[] = [];
+	for (let r of resolver) {
+		const resolverConfig = Resolvers[r as keyof typeof Resolvers];
+		if (resolverConfig && (resolverConfig as any)[family]) {
+			resolvers.push((resolverConfig as any)[family]);
+		}
+	}
+
+	// Fetch template and perform substitutions
+	const templateResponse = await env.ASSETS.fetch(new Request(`${url.origin}/resolver.html`));
+	let template = await templateResponse.text();
+	
+	template = template.replaceAll('[HOSTNAME]', hostname);
+	template = template.replaceAll('[NAME]', hostname.replace('.mydns.network', ''));
+	template = template.replaceAll('[RESOLVERS]', resolvers.join('\n'));
+
+	return new Response(template, {
 		headers: {
 			'Content-Type': 'text/html'
 		}
-	})
+	});
 });
 
 router.all("*", () => new Response("404, not found!", { status: 404 }))

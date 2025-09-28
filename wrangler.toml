@@ -14,10 +14,19 @@ routes = [
 [observability]
 enabled = true
 
+# Static Assets
+[assets]
+directory = "./assets"
+binding = "ASSETS"
+
 # Analytics Engine
 [[analytics_engine_datasets]]
 binding = "ANALYTICS"
 dataset = "mydnsproxy-dev"
+
+[[analytics_engine_datasets]]
+binding = "ERROR_ANALYTICS"
+dataset = "mydnsproxy-errors-dev"
 
 [env.prod]
 name = "mydnsproxy-prod"
@@ -31,3 +40,7 @@ routes = [
     [[env.prod.analytics_engine_datasets]]
     binding = "ANALYTICS"
     dataset = "mydnsproxy-prod"
+
+    [[env.prod.analytics_engine_datasets]]
+    binding = "ERROR_ANALYTICS"
+    dataset = "mydnsproxy-errors-prod"
