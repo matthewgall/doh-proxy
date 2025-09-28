@@ -119,9 +119,6 @@
     "quad9": {
         "malware": "https://dns10.quad9.net/dns-query"
     },
-    "quadrant-security": {
-        "freedom": "https://doh.qis.io/dns-query"
-    },
     "rethinkdns": {
         "freedom": "https://max.rethinkdns.com/dns-query"
     },
