@@ -2,7 +2,7 @@
 
 server=${1:-freedom}
 environment=${2:-prod}
-timeout=${3:10}
+timeout=${3:-10}
 
 if [ $environment = "staging" ]; then
     server="$server.staging"
