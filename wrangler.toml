@@ -28,6 +28,15 @@ dataset = "mydnsproxy-dev"
 binding = "ERROR_ANALYTICS"
 dataset = "mydnsproxy-errors-dev"
 
+# KV Namespace for resolver health scores
+[[kv_namespaces]]
+binding = "RESOLVER_HEALTH"
+id = "5e16b351b2574a87929d8e32606b9539"
+
+# Scheduled task for updating resolver health scores
+[[triggers.crons]]
+crons = ["*/5 * * * *"]  # Every 5 minutes
+
 [env.prod]
 name = "mydnsproxy-prod"
 routes = [
@@ -46,3 +55,7 @@ routes = [
     [[env.prod.analytics_engine_datasets]]
     binding = "ERROR_ANALYTICS"
     dataset = "mydnsproxy-errors-prod"
+
+    [[env.prod.kv_namespaces]]
+    binding = "RESOLVER_HEALTH"
+    id = "950d3394e4464d11965ef46325fb6480"

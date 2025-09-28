@@ -62,20 +62,116 @@ async function getDNSResponse(url: any, env: any, family: any) {
 	}
 }
 
-function chooseResolvers(resolvers: any, q: any, family: any = "freedom", n: any = 3, env: any) {
-	let p = [];
-	if (resolvers.length > n) {
-		for (let r of resolvers.sampleN(n)) {
-			try {
-				p.push(getDNSResponse(`${Resolvers[r][family]}?dns=${q}`, env, family))
+// Scheduled task to update resolver health scores in KV
+async function updateResolverHealthScores(env: any) {
+	const families = ['freedom', 'adblock', 'family'];
+	let dataset = 'prod';
+	if (env.ANALYTICS.toString().includes('dev')) dataset = 'dev';
+	
+	for (let family of families) {
+		try {
+			// Query recent error rates from Analytics Engine
+			let query = `SELECT blob1 AS provider, COUNT() AS error_count FROM 'mydnsproxy-errors-${dataset}' WHERE index1 = '${family}' AND timestamp > NOW() - INTERVAL '2' HOUR GROUP BY provider;`;
+			
+			let response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/analytics_engine/sql`, {
+				method: 'POST',
+				body: query,
+				headers: {
+					'Authorization': `Bearer ${env.CLOUDFLARE_ACCOUNT_TOKEN}`,
+				}
+			});
+			
+			if (response.status === 200) {
+				let data = await response.json();
+				let healthScores: any = {};
+				
+				// Convert error counts to health scores (lower errors = higher score)
+				for (let row of (data as any).data) {
+					let errorCount = parseInt(row.error_count);
+					// Health score: 100 - (error_count * penalty), minimum 1
+					healthScores[row.provider] = Math.max(1, 100 - (errorCount * 0.1));
+				}
+				
+				// Store in KV with 10 minute TTL
+				await env.RESOLVER_HEALTH.put(`health-scores-${family}`, JSON.stringify(healthScores), {
+					expirationTtl: 600 // 10 minutes
+				});
+				
+				console.log(`Updated health scores for ${family}:`, Object.keys(healthScores).length, 'providers');
 			}
-			catch(e: any) {}
+		} catch (e) {
+			console.log(`Failed to update health scores for ${family}:`, e);
 		}
 	}
-	else {
-		// Otherwise, pick one
+}
+
+async function getResolverHealthScores(env: any, family: any) {
+	try {
+		// Fast KV lookup
+		let healthData = await env.RESOLVER_HEALTH.get(`health-scores-${family}`, 'json');
+		return healthData || {};
+	} catch (e) {
+		console.log(`Failed to get health scores for ${family}:`, e);
+		return {};
+	}
+}
+
+function weightedSample(resolvers: any, healthScores: any, family: any, n: any) {
+	// Calculate weights for each resolver
+	let weightedResolvers = resolvers.map((r: any) => {
+		let resolverUrl = Resolvers[r]?.[family];
+		if (!resolverUrl) return { resolver: r, weight: 0 };
+		
+		let hostname = new URL(resolverUrl).hostname;
+		let health = healthScores[hostname] || 50; // Default health score
+		
+		return { resolver: r, weight: health };
+	}).filter((wr: any) => wr.weight > 0);
+	
+	if (weightedResolvers.length === 0) return resolvers.slice(0, n);
+	
+	// Select n resolvers based on weighted probability
+	let selected = [];
+	let totalWeight = weightedResolvers.reduce((sum: number, wr: any) => sum + wr.weight, 0);
+	
+	for (let i = 0; i < Math.min(n, weightedResolvers.length); i++) {
+		let random = Math.random() * totalWeight;
+		let cumulative = 0;
+		
+		for (let wr of weightedResolvers) {
+			cumulative += wr.weight;
+			if (random <= cumulative) {
+				selected.push(wr.resolver);
+				// Remove selected resolver to avoid duplicates
+				weightedResolvers = weightedResolvers.filter((x: any) => x.resolver !== wr.resolver);
+				totalWeight -= wr.weight;
+				break;
+			}
+		}
+	}
+	
+	return selected.length > 0 ? selected : resolvers.slice(0, n);
+}
+
+async function chooseResolvers(resolvers: any, q: any, family: any = "freedom", n: any = 3, env: any) {
+	let p = [];
+	
+	// Get current health scores
+	let healthScores = await getResolverHealthScores(env, family);
+	
+	// Select resolvers using weighted sampling based on health
+	let selectedResolvers;
+	if (Object.keys(healthScores).length > 0) {
+		selectedResolvers = weightedSample(resolvers, healthScores, family, n);
+	} else {
+		// Fallback to random selection if no health data
+		selectedResolvers = resolvers.length > n ? resolvers.sampleN(n) : resolvers;
+	}
+	
+	// Create DNS requests for selected resolvers
+	for (let r of selectedResolvers) {
 		try {
-			p.push(getDNSResponse(`${Resolvers[resolvers.sample()][family]}?dns=${q}`, env, family))
+			p.push(getDNSResponse(`${Resolvers[r][family]}?dns=${q}`, env, family))
 		}
 		catch(e: any) {}
 	}
@@ -540,5 +636,12 @@ router.get('/', async (request, env) => {
 router.all("*", () => new Response("404, not found!", { status: 404 }))
 
 export default {
-	fetch: router.fetch
+	fetch: router.fetch,
+	
+	// Scheduled task handler
+	async scheduled(event: any, env: any, ctx: any) {
+		console.log('Running scheduled health score update...');
+		await updateResolverHealthScores(env);
+		console.log('Health score update completed');
+	}
 }
