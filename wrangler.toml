@@ -31,6 +31,8 @@ dataset = "mydnsproxy-errors-dev"
 [env.prod]
 name = "mydnsproxy-prod"
 routes = [
+    { pattern = "mydns.network/*", zone_name = "mydns.network" },
+    { pattern = "www.mydns.network/*", zone_name = "mydns.network" },
     { pattern = "adblock.mydns.network/*", zone_name = "mydns.network" },
     { pattern = "family.mydns.network/*", zone_name = "mydns.network" },
     { pattern = "freedom.mydns.network/*", zone_name = "mydns.network" },
