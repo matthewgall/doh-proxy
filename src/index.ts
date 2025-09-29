@@ -64,11 +64,19 @@ async function getDNSResponse(url: any, env: any, family: any) {
 
 // Scheduled task to update resolver health scores in KV
 async function updateResolverHealthScores(env: any) {
-	const families = ['freedom', 'adblock', 'family'];
+	// Extract families from config.json keys
+	const configFamilies = Object.keys(Config).map(key => {
+		if (key === 'default') return 'freedom'; // default maps to freedom
+		if (key.endsWith('.mydns.network')) {
+			return key.split('.')[0]; // Extract family name (adblock, family, paranoia)
+		}
+		return null;
+	}).filter(f => f !== null);
+	
 	let dataset = 'prod';
 	if (env.ANALYTICS.toString().includes('dev')) dataset = 'dev';
 	
-	for (let family of families) {
+	for (let family of configFamilies) {
 		try {
 			// Start with all configured resolvers at perfect health (100)
 			let healthScores: any = {};
