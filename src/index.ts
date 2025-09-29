@@ -240,7 +240,7 @@ router.all('/resolve', async (request, env, context) => {
 	}
 	if (family == "paranoia") family = "freedom";
 
-	let providers = chooseResolvers(resolver, query, family, 3, env);
+	let providers = await chooseResolvers(resolver, query, family, 3, env);
 	
 	// And send it off
 	let answer: any;
@@ -402,7 +402,7 @@ router.all('/dns-query', async (request, env, context) => {
 	}
 	if (family == "paranoia") family = "freedom";
 
-	let providers = chooseResolvers(resolver, q, family, 3, env);
+	let providers = await chooseResolvers(resolver, q, family, 3, env);
 	
 	// And send it off
 	let answer: any;
