@@ -34,7 +34,7 @@ binding = "RESOLVER_HEALTH"
 id = "5e16b351b2574a87929d8e32606b9539"
 
 # Scheduled task for updating resolver health scores
-[[triggers.crons]]
+[triggers]
 crons = ["*/5 * * * *"]  # Every 5 minutes
 
 [env.prod]
