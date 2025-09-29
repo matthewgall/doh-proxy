@@ -70,6 +70,21 @@ async function updateResolverHealthScores(env: any) {
 	
 	for (let family of families) {
 		try {
+			// Start with all configured resolvers at perfect health (100)
+			let healthScores: any = {};
+			
+			// Get all resolvers for this family from config
+			for (let configKey of Object.keys(Config)) {
+				let configResolvers = Config[configKey as keyof typeof Config].resolvers;
+				for (let resolverKey of configResolvers) {
+					let resolverConfig = Resolvers[resolverKey as keyof typeof Resolvers];
+					if (resolverConfig && (resolverConfig as any)[family]) {
+						let hostname = new URL((resolverConfig as any)[family]).hostname;
+						healthScores[hostname] = 100; // Start at perfect health
+					}
+				}
+			}
+			
 			// Query recent error rates from Analytics Engine
 			let query = `SELECT blob1 AS provider, COUNT() AS error_count FROM 'mydnsproxy-errors-${dataset}' WHERE index1 = '${family}' AND timestamp > NOW() - INTERVAL '2' HOUR GROUP BY provider;`;
 			
@@ -83,22 +98,26 @@ async function updateResolverHealthScores(env: any) {
 			
 			if (response.status === 200) {
 				let data = await response.json();
-				let healthScores: any = {};
 				
-				// Convert error counts to health scores (lower errors = higher score)
+				// Apply error penalties to base health scores
 				for (let row of (data as any).data) {
+					let provider = row.provider;
 					let errorCount = parseInt(row.error_count);
-					// Health score: 100 - (error_count * penalty), minimum 1
-					healthScores[row.provider] = Math.max(1, 100 - (errorCount * 0.1));
+					
+					// Only apply penalty if this provider is in our configured resolvers
+					if (healthScores.hasOwnProperty(provider)) {
+						// Health score: start at 100, subtract (error_count * penalty), minimum 1
+						healthScores[provider] = Math.max(1, 100 - (errorCount * 0.1));
+					}
 				}
-				
-				// Store in KV with 10 minute TTL
-				await env.RESOLVER_HEALTH.put(`health-scores-${family}`, JSON.stringify(healthScores), {
-					expirationTtl: 600 // 10 minutes
-				});
-				
-				console.log(`Updated health scores for ${family}:`, Object.keys(healthScores).length, 'providers');
 			}
+			
+			// Store in KV with 10 minute TTL
+			await env.RESOLVER_HEALTH.put(`health-scores-${family}`, JSON.stringify(healthScores), {
+				expirationTtl: 600 // 10 minutes
+			});
+			
+			console.log(`Updated health scores for ${family}:`, Object.keys(healthScores).length, 'providers');
 		} catch (e) {
 			console.log(`Failed to update health scores for ${family}:`, e);
 		}
