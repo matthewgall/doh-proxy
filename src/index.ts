@@ -64,81 +64,75 @@ async function getDNSResponse(url: any, env: any, family: any) {
 
 // Scheduled task to update resolver health scores in KV
 async function updateResolverHealthScores(env: any) {
-	// Extract families from config.json keys
-	const configFamilies = Object.keys(Config).map(key => {
-		if (key === 'default') return 'freedom'; // default maps to freedom
-		if (key.endsWith('.mydns.network')) {
-			return key.split('.')[0]; // Extract family name (adblock, family, paranoia)
-		}
-		return null;
-	}).filter(f => f !== null);
-	
 	let dataset = 'prod';
 	if (env.ANALYTICS.toString().includes('dev')) dataset = 'dev';
 	
-	for (let family of configFamilies) {
-		try {
-			// Start with all configured resolvers at perfect health (100)
-			let healthScores: any = {};
-			
-			// Get all resolvers for this family from config
-			for (let configKey of Object.keys(Config)) {
-				let configResolvers = Config[configKey as keyof typeof Config].resolvers;
-				for (let resolverKey of configResolvers) {
-					let resolverConfig = Resolvers[resolverKey as keyof typeof Resolvers];
-					if (resolverConfig && (resolverConfig as any)[family]) {
-						let hostname = new URL((resolverConfig as any)[family]).hostname;
-						healthScores[hostname] = 100; // Start at perfect health
+	try {
+		// Start with all configured resolvers at perfect health (100)
+		let healthScores: any = {};
+		
+		// Get all unique resolvers across all families from config
+		for (let configKey of Object.keys(Config)) {
+			let configResolvers = Config[configKey as keyof typeof Config].resolvers;
+			for (let resolverKey of configResolvers) {
+				let resolverConfig = Resolvers[resolverKey as keyof typeof Resolvers];
+				if (resolverConfig) {
+					// Check all available families for this resolver
+					for (let family of ['freedom', 'adblock', 'family']) {
+						if ((resolverConfig as any)[family]) {
+							let hostname = new URL((resolverConfig as any)[family]).hostname;
+							healthScores[hostname] = 100; // Start at perfect health
+						}
 					}
 				}
 			}
-			
-			// Query recent error rates from Analytics Engine
-			let query = `SELECT blob1 AS provider, COUNT() AS error_count FROM 'mydnsproxy-errors-${dataset}' WHERE index1 = '${family}' AND timestamp > NOW() - INTERVAL '2' HOUR GROUP BY provider;`;
-			
-			let response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/analytics_engine/sql`, {
-				method: 'POST',
-				body: query,
-				headers: {
-					'Authorization': `Bearer ${env.CLOUDFLARE_ACCOUNT_TOKEN}`,
-				}
-			});
-			
-			if (response.status === 200) {
-				let data = await response.json();
-				
-				// Apply error penalties to base health scores
-				for (let row of (data as any).data) {
-					let provider = row.provider;
-					let errorCount = parseInt(row.error_count);
-					
-					// Only apply penalty if this provider is in our configured resolvers
-					if (healthScores.hasOwnProperty(provider)) {
-						// Health score: start at 100, subtract (error_count * penalty), minimum 1
-						healthScores[provider] = Math.max(1, 100 - (errorCount * 0.1));
-					}
-				}
-			}
-			
-			// Store in KV with 10 minute TTL
-			await env.RESOLVER_HEALTH.put(`health-scores-${family}`, JSON.stringify(healthScores), {
-				expirationTtl: 600 // 10 minutes
-			});
-			
-			console.log(`Updated health scores for ${family}:`, Object.keys(healthScores).length, 'providers');
-		} catch (e) {
-			console.log(`Failed to update health scores for ${family}:`, e);
 		}
+		
+		// Query recent error rates from Analytics Engine (across ALL families)
+		let query = `SELECT blob1 AS provider, COUNT() AS error_count FROM 'mydnsproxy-errors-${dataset}' WHERE timestamp > NOW() - INTERVAL '2' HOUR GROUP BY provider;`;
+		
+		let response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/analytics_engine/sql`, {
+			method: 'POST',
+			body: query,
+			headers: {
+				'Authorization': `Bearer ${env.CLOUDFLARE_ACCOUNT_TOKEN}`,
+			}
+		});
+		
+		if (response.status === 200) {
+			let data = await response.json();
+			
+			// Apply error penalties to base health scores
+			for (let row of (data as any).data) {
+				let provider = row.provider;
+				let errorCount = parseInt(row.error_count);
+				
+				// Only apply penalty if this provider is in our configured resolvers
+				if (healthScores.hasOwnProperty(provider)) {
+					// Health score: start at 100, subtract (error_count * penalty), minimum 1
+					healthScores[provider] = Math.max(1, 100 - (errorCount * 0.1));
+				}
+			}
+		}
+		
+		// Store single combined health scores in KV with 10 minute TTL
+		await env.RESOLVER_HEALTH.put('health-scores', JSON.stringify(healthScores), {
+			expirationTtl: 600 // 10 minutes
+		});
+		
+		console.log(`Updated combined health scores:`, Object.keys(healthScores).length, 'providers');
+	} catch (e) {
+		console.log(`Failed to update health scores:`, e);
 	}
 }
 
 async function getResolverHealthScores(env: any, family: any) {
 	try {
-		// Fast KV lookup
-		let healthData = await env.RESOLVER_HEALTH.get(`health-scores-${family}`, 'json');
+		// Fast KV lookup - single combined health scores for all families
+		let healthData = await env.RESOLVER_HEALTH.get('health-scores', 'json');
 		return healthData || {};
 	} catch (e) {
-		console.log(`Failed to get health scores for ${family}:`, e);
+		console.log(`Failed to get health scores:`, e);
 		return {};
 	}
 }
@@ -579,10 +573,14 @@ router.get('/error-analytics', async (request, env) => {
 				query = `SELECT blob1 AS provider, CASE WHEN blob2 = 'NETWORK_ERROR' THEN 'Network Issues' WHEN blob2 = 'TIMEOUT_ERROR' THEN 'Timeout Issues' WHEN blob2 LIKE 'HTTP_%' THEN 'HTTP Errors' WHEN blob2 = 'DNS_ERROR' THEN 'DNS Resolution' ELSE 'Other' END AS issue_category, COUNT() AS count FROM 'mydnsproxy-errors-${dataset}' WHERE timestamp > NOW() - INTERVAL '${hours}' HOUR GROUP BY provider, issue_category ORDER BY provider, count DESC;`;
 				break;
 				
+			case 'combined-health':
+				query = `SELECT blob1 AS provider, COUNT() AS total_errors FROM 'mydnsproxy-errors-${dataset}' WHERE timestamp > NOW() - INTERVAL '${hours}' HOUR GROUP BY provider ORDER BY total_errors DESC;`;
+				break;
+				
 			default:
 				return new Response(JSON.stringify({
 					error: 'Invalid query type',
-					validTypes: ['error-rates', 'http-errors', 'reliability', 'error-types']
+					validTypes: ['error-rates', 'http-errors', 'reliability', 'error-types', 'combined-health']
 				}), { status: 400, headers: {'Content-Type': 'application/json'}});
 		}
 
@@ -607,6 +605,40 @@ router.get('/error-analytics', async (request, env) => {
 	}
 
 	return new Response(JSON.stringify(resp, null, 2), { headers: {'Content-Type': 'application/json'}})
+})
+
+router.get('/health-scores', async (request, env) => {
+	let url: any = new URL(request.url);
+	
+	try {
+		// Get combined health scores from KV
+		let healthData = await env.RESOLVER_HEALTH.get('health-scores', 'json');
+		
+		if (!healthData || Object.keys(healthData).length === 0) {
+			return new Response(JSON.stringify({
+				error: 'No health data available',
+				message: 'Health scores may still be generating. Please try again in a few minutes.'
+			}), { headers: {'Content-Type': 'application/json'}});
+		}
+		
+		// Sort by health score descending (best first)
+		let sortedScores = Object.entries(healthData)
+			.map(([provider, score]) => ({ provider, health_score: score }))
+			.sort((a: any, b: any) => b.health_score - a.health_score);
+		
+		let resp = {
+			last_updated: new Date().toISOString(),
+			total_providers: sortedScores.length,
+			data: sortedScores
+		};
+		
+		return new Response(JSON.stringify(resp, null, 2), { headers: {'Content-Type': 'application/json'}});
+	} catch (e: any) {
+		return new Response(JSON.stringify({
+			error: 'Failed to retrieve health scores',
+			message: e.message
+		}), { status: 500, headers: {'Content-Type': 'application/json'}});
+	}
 })
 
 // Static asset routes
