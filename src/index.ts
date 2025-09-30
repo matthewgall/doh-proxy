@@ -644,6 +644,12 @@ router.get('/error-analytics', async (request, env) => {
 router.get('/health-scores', async (request, env) => {
 	let url: any = new URL(request.url);
 	
+	// Determine family from hostname
+	let family = "freedom"
+	if (url.hostname.includes('.mydns.network')) {
+		family = url.hostname.split('.')[0];
+	}
+	
 	try {
 		// Get combined health scores from KV
 		let healthData = await env.RESOLVER_HEALTH.get('health-scores', 'json');
@@ -655,12 +661,31 @@ router.get('/health-scores', async (request, env) => {
 			}), { headers: {'Content-Type': 'application/json'}});
 		}
 		
+		// Get resolvers used by this family
+		let resolver: any = Config['default'].resolvers;
+		if (Config[url.hostname]) {
+			resolver = Config[url.hostname].resolvers;
+		}
+		
+		// Filter health scores to only include resolvers used by this family
+		let familyHealthScores: any = {};
+		for (let resolverKey of resolver) {
+			let resolverConfig = Resolvers[resolverKey as keyof typeof Resolvers];
+			if (resolverConfig && (resolverConfig as any)[family]) {
+				let hostname = new URL((resolverConfig as any)[family]).hostname;
+				if (healthData[hostname] !== undefined) {
+					familyHealthScores[hostname] = healthData[hostname];
+				}
+			}
+		}
+		
 		// Sort by health score descending (best first)
-		let sortedScores = Object.entries(healthData)
+		let sortedScores = Object.entries(familyHealthScores)
 			.map(([provider, score]) => ({ provider, health_score: score }))
 			.sort((a: any, b: any) => b.health_score - a.health_score);
 		
 		let resp = {
+			family: family,
 			last_updated: new Date().toISOString(),
 			total_providers: sortedScores.length,
 			data: sortedScores
