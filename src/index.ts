@@ -671,10 +671,14 @@ router.get('/health-scores', async (request, env) => {
 		let familyHealthScores: any = {};
 		for (let resolverKey of resolver) {
 			let resolverConfig = Resolvers[resolverKey as keyof typeof Resolvers];
-			if (resolverConfig && (resolverConfig as any)[family]) {
-				let hostname = new URL((resolverConfig as any)[family]).hostname;
-				if (healthData[hostname] !== undefined) {
-					familyHealthScores[hostname] = healthData[hostname];
+			if (resolverConfig) {
+				// Paranoia uses freedom endpoints, so map it appropriately
+				let lookupFamily = family === 'paranoia' ? 'freedom' : family;
+				if ((resolverConfig as any)[lookupFamily]) {
+					let hostname = new URL((resolverConfig as any)[lookupFamily]).hostname;
+					if (healthData[hostname] !== undefined) {
+						familyHealthScores[hostname] = healthData[hostname];
+					}
 				}
 			}
 		}
