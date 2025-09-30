@@ -88,31 +88,65 @@ async function updateResolverHealthScores(env: any) {
 			}
 		}
 		
-		// Query recent error rates from Analytics Engine (across ALL families)
-		let query = `SELECT blob1 AS provider, COUNT() AS error_count FROM 'mydnsproxy-errors-${dataset}' WHERE timestamp > NOW() - INTERVAL '2' HOUR GROUP BY provider;`;
+		// Query error counts and success counts to calculate error rates
+		let errorQuery = `SELECT blob1 AS provider, COUNT() AS error_count FROM 'mydnsproxy-errors-${dataset}' WHERE timestamp > NOW() - INTERVAL '2' HOUR GROUP BY provider;`;
+		let successQuery = `SELECT blob1 AS provider, SUM(_sample_interval) AS success_count FROM 'mydnsproxy-${dataset}' WHERE timestamp > NOW() - INTERVAL '2' HOUR GROUP BY provider;`;
 		
-		let response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/analytics_engine/sql`, {
-			method: 'POST',
-			body: query,
-			headers: {
-				'Authorization': `Bearer ${env.CLOUDFLARE_ACCOUNT_TOKEN}`,
-			}
-		});
-		
-		if (response.status === 200) {
-			let data = await response.json();
+		// Get error data
+		let errorData: any = {};
+		try {
+			let errorResponse = await fetch(`https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/analytics_engine/sql`, {
+				method: 'POST',
+				body: errorQuery,
+				headers: {
+					'Authorization': `Bearer ${env.CLOUDFLARE_ACCOUNT_TOKEN}`,
+				}
+			});
 			
-			// Apply error penalties to base health scores
-			for (let row of (data as any).data) {
-				let provider = row.provider;
-				let errorCount = parseInt(row.error_count);
-				
-				// Only apply penalty if this provider is in our configured resolvers
-				if (healthScores.hasOwnProperty(provider)) {
-					// Health score: start at 100, subtract (error_count * penalty), minimum 1
-					healthScores[provider] = Math.max(1, 100 - (errorCount * 0.1));
+			if (errorResponse.status === 200) {
+				let data = await errorResponse.json();
+				for (let row of (data as any).data) {
+					errorData[row.provider] = parseInt(row.error_count);
 				}
 			}
+		} catch (e) {
+			console.log('Failed to get error data:', e);
+		}
+		
+		// Get success data
+		let successData: any = {};
+		try {
+			let successResponse = await fetch(`https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/analytics_engine/sql`, {
+				method: 'POST',
+				body: successQuery,
+				headers: {
+					'Authorization': `Bearer ${env.CLOUDFLARE_ACCOUNT_TOKEN}`,
+				}
+			});
+			
+			if (successResponse.status === 200) {
+				let data = await successResponse.json();
+				for (let row of (data as any).data) {
+					successData[row.provider] = parseInt(row.success_count);
+				}
+			}
+		} catch (e) {
+			console.log('Failed to get success data:', e);
+		}
+		
+		// Calculate error rates and adjust health scores
+		for (let provider in healthScores) {
+			let errors = errorData[provider] || 0;
+			let successes = successData[provider] || 0;
+			let totalRequests = errors + successes;
+			
+			if (totalRequests > 0) {
+				let errorRate = errors / totalRequests;
+				// Health score: 100 * (1 - error_rate), minimum 1
+				// 0% error rate = 100, 1% error rate = 99, 10% error rate = 90, etc.
+				healthScores[provider] = Math.max(1, Math.round(100 * (1 - errorRate)));
+			}
+			// If no data, keep default score of 100
 		}
 		
 		// Store single combined health scores in KV with 10 minute TTL
