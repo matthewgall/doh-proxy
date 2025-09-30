@@ -1,6 +1,8 @@
 import { Router } from 'itty-router';
 import { Buffer } from 'node:buffer';
 import { toType, toRcode } from './dnsUtils';
+import { getAllFamilies } from './utils';
+import './utils'; // Import for Array prototype extensions
 import base64url from 'base64url';
 import * as dnsPacket from '@dnsquery/dns-packet';
 import Config from '../config.json';
@@ -9,37 +11,6 @@ import Package from '../package-lock.json';
 
 const router = Router();
 
-// Utility function to get all families from config.json
-function getAllFamilies() {
-	let families = new Set<string>();
-	for (let configKey of Object.keys(Config)) {
-		if (configKey.includes('.mydns.network')) {
-			let family = configKey.replace('.mydns.network', '');
-			families.add(family);
-		} else if (configKey === 'default') {
-			families.add('freedom'); // default maps to freedom
-		}
-	}
-	return Array.from(families).sort();
-}
-
-Array.prototype.sample = function(){
-	return this[Math.floor(Math.random()*this.length)];
-}
-
-Array.prototype.sampleN = function(n: any) {
-	var result = new Array(n),
-		len = this.length,
-		taken = new Array(len);
-	if (n > len)
-		throw new RangeError("getRandom: more elements taken than available");
-	while (n--) {
-		var x = Math.floor(Math.random() * len);
-		result[n] = this[x in taken ? taken[x] : x];
-		taken[x] = --len in taken ? taken[len] : len;
-	}
-	return result;
-}
 
 async function getDNSResponse(url: any, env: any, family: any) {
 	let p: any = new URL(url).hostname;
