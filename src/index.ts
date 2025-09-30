@@ -9,6 +9,20 @@ import Package from '../package-lock.json';
 
 const router = Router();
 
+// Utility function to get all families from config.json
+function getAllFamilies() {
+	let families = new Set<string>();
+	for (let configKey of Object.keys(Config)) {
+		if (configKey.includes('.mydns.network')) {
+			let family = configKey.replace('.mydns.network', '');
+			families.add(family);
+		} else if (configKey === 'default') {
+			families.add('freedom'); // default maps to freedom
+		}
+	}
+	return Array.from(families).sort();
+}
+
 Array.prototype.sample = function(){
 	return this[Math.floor(Math.random()*this.length)];
 }
@@ -78,7 +92,7 @@ async function updateResolverHealthScores(env: any) {
 				let resolverConfig = Resolvers[resolverKey as keyof typeof Resolvers];
 				if (resolverConfig) {
 					// Check all available families for this resolver
-					for (let family of ['freedom', 'adblock', 'family']) {
+					for (let family of getAllFamilies()) {
 						if ((resolverConfig as any)[family]) {
 							let hostname = new URL((resolverConfig as any)[family]).hostname;
 							healthScores[hostname] = 100; // Start at perfect health
