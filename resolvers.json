@@ -70,10 +70,6 @@
     "dnssb": {
         "freedom": "https://doh.dns.sb/dns-query"
     },
-    "faelix": {
-        "adblock": "https://pdns.faelix.net/",
-        "freedom": "https://rdns.faelix.net/"
-    },
     "fdn": {
         "freedom": "https://ns0.fdn.fr/dns-query"
     },
