@@ -15,18 +15,19 @@ export function getAllFamilies() {
 	return Array.from(families).sort();
 }
 
-// Array prototype extensions for random sampling
-declare global {
-	interface Array<T> {
-		sample(): T;
-		sampleN(n: number): T[];
+// Utility functions for random sampling
+export function sampleArray<T>(array: T[]): T {
+	return array[Math.floor(Math.random() * array.length)];
+}
+
+export function sampleArrayN<T>(array: T[], n: number): T[] {
+	if (n >= array.length) return [...array];
+	
+	// Fisher-Yates shuffle for better randomness than sort()
+	const result = [...array];
+	for (let i = result.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[result[i], result[j]] = [result[j], result[i]];
 	}
-}
-
-Array.prototype.sample = function(){
-	return this[Math.floor(Math.random()*this.length)];
-}
-
-Array.prototype.sampleN = function(n: number){
-	return this.sort(() => 0.5 - Math.random()).slice(0, n);
+	return result.slice(0, n);
 }

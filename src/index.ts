@@ -1,8 +1,7 @@
 import { Router } from 'itty-router';
 import { Buffer } from 'node:buffer';
 import { toType, toRcode } from './dnsUtils';
-import { getAllFamilies } from './utils';
-import './utils'; // Import for Array prototype extensions
+import { getAllFamilies, sampleArrayN } from './utils';
 import base64url from 'base64url';
 import * as dnsPacket from '@dnsquery/dns-packet';
 import Config from '../config.json';
@@ -205,7 +204,7 @@ async function chooseResolvers(resolvers: any, q: any, family: any = "freedom", 
 		selectedResolvers = weightedSample(resolvers, healthScores, family, n);
 	} else {
 		// Fallback to random selection if no health data
-		selectedResolvers = resolvers.length > n ? resolvers.sampleN(n) : resolvers;
+		selectedResolvers = resolvers.length > n ? sampleArrayN(resolvers, n) : resolvers;
 	}
 	
 	// Create DNS requests for selected resolvers
