@@ -15,11 +15,7 @@ export function getAllFamilies() {
 	return Array.from(families).sort();
 }
 
-// Utility functions for random sampling
-export function sampleArray<T>(array: T[]): T {
-	return array[Math.floor(Math.random() * array.length)];
-}
-
+// Utility function for random sampling
 export function sampleArrayN<T>(array: T[], n: number): T[] {
 	if (n >= array.length) return [...array];
 	
