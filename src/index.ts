@@ -1,7 +1,7 @@
 import { Router } from 'itty-router';
 import { Buffer } from 'node:buffer';
 import { toType, toRcode } from './dnsUtils';
-import { getAllFamilies, sampleArrayN } from './utils';
+import { getAllFamilies, sampleArrayN, getResolverFamily } from './utils';
 import base64url from 'base64url';
 import * as dnsPacket from '@dnsquery/dns-packet';
 import Config from '../config.json';
@@ -277,7 +277,7 @@ router.all('/resolve', async (request, env, context) => {
 	if (url.hostname.includes('.mydns.network')) {
 		family = url.hostname.split('.')[0];
 	}
-	if (family == "paranoia") family = "freedom";
+	family = getResolverFamily(family);
 
 	let providers = await chooseResolvers(resolver, query, family, 3, env);
 	
@@ -439,7 +439,7 @@ router.all('/dns-query', async (request, env, context) => {
 	if (url.hostname.includes('.mydns.network')) {
 		family = url.hostname.split('.')[0];
 	}
-	if (family == "paranoia") family = "freedom";
+	family = getResolverFamily(family);
 
 	let providers = await chooseResolvers(resolver, q, family, 3, env);
 	
@@ -496,7 +496,7 @@ router.get('/dns-providers', async (request) => {
 	if (url.hostname.includes('.mydns.network')) {
 		family = url.hostname.split('.')[0];
 	}
-	if (family == "paranoia") family = "freedom";
+	family = getResolverFamily(family);
 	
 	// Add each provider to the response, so they can be seen
 	for (let r of resolver) {
@@ -524,7 +524,7 @@ router.get('/resolver-usage', async (request, env) => {
 	if (url.hostname.includes('.mydns.network')) {
 		family = url.hostname.split('.')[0];
 	}
-	if (family == "paranoia") family = "freedom";
+	family = getResolverFamily(family);
 
 	// Now we select the right dataset
 	let dataset: any = 'prod'
@@ -564,7 +564,7 @@ router.get('/error-analytics', async (request, env) => {
 	if (url.hostname.includes('.mydns.network')) {
 		family = url.hostname.split('.')[0];
 	}
-	if (family == "paranoia") family = "freedom";
+	family = getResolverFamily(family);
 
 	let dataset = 'prod'
 	if (url.hostname.includes('.staging.')) dataset = 'dev'
@@ -647,8 +647,15 @@ router.get('/health-scores', async (request, env) => {
 		
 		// Get resolvers used by this family
 		let resolver: any = Config['default'].resolvers;
-		if (Config[url.hostname]) {
-			resolver = Config[url.hostname].resolvers;
+		let configKey = url.hostname;
+		
+		// Map staging hostnames to production config keys
+		if (url.hostname.includes('.staging.mydns.network')) {
+			configKey = url.hostname.replace('.staging.mydns.network', '.mydns.network');
+		}
+		
+		if (Config[configKey]) {
+			resolver = Config[configKey].resolvers;
 		}
 		
 		// Filter health scores to only include resolvers used by this family
@@ -657,7 +664,7 @@ router.get('/health-scores', async (request, env) => {
 			let resolverConfig = Resolvers[resolverKey as keyof typeof Resolvers];
 			if (resolverConfig) {
 				// Paranoia uses freedom endpoints, so map it appropriately
-				let lookupFamily = family === 'paranoia' ? 'freedom' : family;
+				let lookupFamily = getResolverFamily(family);
 				if ((resolverConfig as any)[lookupFamily]) {
 					let hostname = new URL((resolverConfig as any)[lookupFamily]).hostname;
 					if (healthData[hostname] !== undefined) {
@@ -713,7 +720,7 @@ router.get('/', async (request, env) => {
 	if (hostname.includes('.mydns.network')) {
 		family = hostname.split('.')[0];
 	}
-	if (family == "paranoia") family = "freedom";
+	family = getResolverFamily(family);
 
 	// Get resolver URLs
 	const resolvers: string[] = [];

@@ -15,6 +15,12 @@ export function getAllFamilies() {
 	return Array.from(families).sort();
 }
 
+// Map family names to their resolver family equivalents  
+// Paranoia uses freedom endpoints to avoid duplicate data in resolvers.json
+export function getResolverFamily(family: string): string {
+	return family === 'paranoia' ? 'freedom' : family;
+}
+
 // Utility function for random sampling
 export function sampleArrayN<T>(array: T[], n: number): T[] {
 	if (n >= array.length) return [...array];
