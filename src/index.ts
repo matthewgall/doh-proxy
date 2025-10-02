@@ -1,9 +1,11 @@
 import { Router } from 'itty-router';
 import { Buffer } from 'node:buffer';
-import { toType, toRcode } from './dnsUtils';
-import { getResolverFamily } from './utils';
 import { chooseResolvers, createDNSQuery, enforceDNSSEC } from './dnsResolver';
 import { updateResolverHealthScores, getResolverHealthScores, executeAnalyticsQuery, buildAnalyticsQuery, logUsageAnalytics } from './analytics';
+import { parseRequestContext, validateDNSQueryType, parseQueryParameters } from './requestUtils';
+import { processDNSResponse, extractProviderHostname } from './dnsProcessor';
+import { CloudflareEnv, DNSResponse, ErrorAnalyticsResponse, HealthScoreResponse, APIError } from './types';
+import { getResolverFamily } from './utils';
 import base64url from 'base64url';
 import * as dnsPacket from '@dnsquery/dns-packet';
 import Config from '../config.json';
@@ -12,49 +14,39 @@ import Package from '../package-lock.json';
 
 const router = Router();
 
-router.all('/resolve', async (request, env, context) => {
-	// First, grab some request information
-	let url: any = new URL(request.url)
+router.all('/resolve', async (request, env: CloudflareEnv, ctx) => {
+	// Parse request context (hostname, family, resolvers, etc.)
+	const url = new URL(request.url);
+	const requestContext = parseRequestContext(url);
 
-	// Now, we refuse anything that isn't GET or POST
+	// Validate HTTP method
 	if (!['GET', 'POST'].includes(request.method)) {
-		return new Response('Not Found.', { status: 404 })
+		return new Response('Not Found.', { status: 404 });
 	}
 
-	let name: any;
-	let rrtype: any = 'A';
-
-	if (request.method == 'GET') {
-		if (request.query.name) name = request.query.name || null;
-		if (request.query.type) {
-			const typeParam = Array.isArray(request.query.type) ? request.query.type[0] : request.query.type;
-			rrtype = typeParam.toUpperCase();
-		}
-
-		if (name == null) return new Response('Missing name in ?name=', { status: 400 })
-		
+	// Parse query parameters
+	const { name, type: rrtype } = parseQueryParameters(url);
+	
+	if (request.method === 'GET' && !name) {
+		return new Response('Missing name in ?name=', { status: 400 });
 	}
 
-	if (!['A', 'AAAA', 'DNSKEY', 'MX', 'NS', 'SRV', 'TXT'].includes(rrtype)) return new Response('Unsupported rrtype', { status: 400 })
+	if (!validateDNSQueryType(rrtype)) {
+		return new Response('Unsupported rrtype', { status: 400 });
+	}
 
 	// Create DNS query with DNSSEC enforcement
-	const query = createDNSQuery(name, rrtype);
+	const query = createDNSQuery(name!, rrtype);
 
-	// Next, we prepare to send it on, first pick a resolver (by default, we use the default)
-	let resolver: any = Config['default'].resolvers
-	if (Config[url.hostname]) {
-		// Check now for a resolvers set for the hostname the request came in on
-		resolver = Config[url.hostname].resolvers
-	}
-
-	// We also have to determine the resolver family, by default, freedom
-	let family = "freedom"
-	if (url.hostname.includes('.mydns.network')) {
-		family = url.hostname.split('.')[0];
-	}
-	family = getResolverFamily(family);
-
-	let providers = await chooseResolvers(resolver, query, family, 3, env, getResolverHealthScores);
+	// Choose resolvers using intelligent selection
+	const providers = await chooseResolvers(
+		requestContext.resolvers, 
+		query, 
+		requestContext.resolverFamily, 
+		3, 
+		env, 
+		getResolverHealthScores
+	);
 	
 	// And send it off
 	let answer: any;
@@ -66,74 +58,17 @@ router.all('/resolve', async (request, env, context) => {
 		return new Response('We encountered a server error. Please try again later', { status: 500 })
 	}
 
-	// Once we have an answer, we read it in
-	let decoded: any = await answer.arrayBuffer();
-	decoded = Buffer.from(decoded);
-
-	// And next, we decode it
-	decoded = dnsPacket.decode(decoded);
+	// Process DNS response
+	const arrayBuffer = await answer.arrayBuffer();
+	const buffer = Buffer.from(arrayBuffer);
+	const decoded = dnsPacket.decode(buffer);
 	
-	// Now, we need to prepare the response
-	let resp: any = {}
+	// Process the response using optimized processor
+	const resp: DNSResponse = processDNSResponse(decoded, answer.url);
 
-	// Initially, did the query even work?
-	resp.Status = toRcode(decoded.rcode);
-
-	// Next, we'll add some flags
-	for (let key of Object.keys(decoded)) {
-		if (key.includes('flag_')) {
-			if (['AD', 'CD', 'RA', 'RD', 'TC'].includes(key.replaceAll('flag_', '').toUpperCase())) {
-				resp[key.replaceAll('flag_', '').toUpperCase()] = decoded[key]
-			}
-		}
-	}
-
-	// And the question
-	resp.Question = [];
-	for (let q of decoded.questions) {
-		resp.Question.push({
-			'name': `${q.name}.`,
-			'type': toType(q.type)
-		})
-	};
-
-
-	// Now, we determine if there is an answer to give
-	if (decoded.answers.length > 0) {
-		resp.Answer = [];
-		for (let ans of decoded.answers) {
-
-			let r: any = {
-				'name': `${ans.name}.`,
-				'type': toType(ans.type),
-				'TTL': ans.ttl,
-				'data': ans.data
-			}
-
-			if (['DNSKEY'].includes(ans.type)) r.data = `${ans.data.flags} ${ans.data.algorithm} ${btoa(String.fromCharCode.apply(null, ans.data.key))}`;
-			if (['TXT'].includes(ans.type)) r.data = ans.data[0].toString()
-			if (['SRV'].includes(ans.type)) r.data = `${ans.data.priority} ${ans.data.weight} ${ans.data.port} ${ans.data.target}.`
-
-			resp.Answer.push(r)
-		}
-	}
-	if (decoded.answers.length == 0) {
-		resp.Authority = [];
-		for (let auth of decoded.authorities) {
-			resp.Authority.push({
-				'name': auth.name,
-				'type': toType(auth.type),
-				'TTL': auth.ttl,
-				'data': `${auth.data.mname}. ${auth.data.rname}. ${auth.data.serial} ${auth.data.refresh} ${auth.data.retry} ${auth.data.expire} ${auth.data.minimum}`
-			})
-		}
-	}
-
-	// And a comment from where it came from
-	let prov: any = new URL(answer.url).hostname;
 	// Log usage analytics
-	logUsageAnalytics(env, prov, family);
-	resp.Comment = `Response from ${prov}`
+	const providerHostname = extractProviderHostname(answer.url);
+	logUsageAnalytics(env, providerHostname, requestContext.family);
 
 	return new Response(JSON.stringify(resp), { headers: { 'Content-Type': 'application/json'}})
 })
