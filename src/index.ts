@@ -1,7 +1,9 @@
 import { Router } from 'itty-router';
 import { Buffer } from 'node:buffer';
 import { toType, toRcode } from './dnsUtils';
-import { getAllFamilies, sampleArrayN, getResolverFamily } from './utils';
+import { getResolverFamily } from './utils';
+import { chooseResolvers, createDNSQuery, enforceDNSSEC } from './dnsResolver';
+import { updateResolverHealthScores, getResolverHealthScores, executeAnalyticsQuery, buildAnalyticsQuery, logUsageAnalytics } from './analytics';
 import base64url from 'base64url';
 import * as dnsPacket from '@dnsquery/dns-packet';
 import Config from '../config.json';
@@ -9,218 +11,6 @@ import Resolvers from '../resolvers.json';
 import Package from '../package-lock.json';
 
 const router = Router();
-
-
-async function getDNSResponse(url: any, env: any, family: any) {
-	let p: any = new URL(url).hostname;
-	try {
-		let r: any = await fetch(url, {
-			headers: {
-				'Content-Type': 'application/dns-message'
-			}
-		})
-
-		if (r.status !== 200) {
-			// Log non-200 response to Error Analytics Engine
-			env.ERROR_ANALYTICS.writeDataPoint({
-				'blobs': [p, `HTTP_${r.status}`], 
-				'doubles': [r.status],
-				'indexes': [family]
-			});
-			throw new Error(`HTTP ${r.status} from ${p}`);
-		}
-		return r;
-	} catch (e: any) {
-		// Log fetch errors to Analytics Engine
-		let errorType = 'FETCH_ERROR';
-		if (e.name === 'TypeError') errorType = 'NETWORK_ERROR';
-		if (e.message.includes('timeout')) errorType = 'TIMEOUT_ERROR';
-		if (e.message.includes('DNS')) errorType = 'DNS_ERROR';
-
-		env.ERROR_ANALYTICS.writeDataPoint({
-			'blobs': [p, errorType], 
-			'doubles': [],
-			'indexes': [family]
-		});
-		throw e;
-	}
-}
-
-// Scheduled task to update resolver health scores in KV
-async function updateResolverHealthScores(env: any) {
-	let dataset = 'prod';
-	if (env.ANALYTICS.toString().includes('dev')) dataset = 'dev';
-	
-	try {
-		// Start with all configured resolvers at perfect health (100)
-		let healthScores: any = {};
-		
-		// Get all unique resolvers across all families from config
-		for (let configKey of Object.keys(Config)) {
-			let configResolvers = Config[configKey as keyof typeof Config].resolvers;
-			for (let resolverKey of configResolvers) {
-				let resolverConfig = Resolvers[resolverKey as keyof typeof Resolvers];
-				if (resolverConfig) {
-					// Check all available families for this resolver
-					for (let family of getAllFamilies()) {
-						if ((resolverConfig as any)[family]) {
-							let hostname = new URL((resolverConfig as any)[family]).hostname;
-							healthScores[hostname] = 100; // Start at perfect health
-						}
-					}
-				}
-			}
-		}
-		
-		// Query error counts and success counts to calculate error rates
-		let errorQuery = `SELECT blob1 AS provider, COUNT() AS error_count FROM 'mydnsproxy-errors-${dataset}' WHERE timestamp > NOW() - INTERVAL '2' HOUR GROUP BY provider;`;
-		let successQuery = `SELECT blob1 AS provider, SUM(_sample_interval) AS success_count FROM 'mydnsproxy-${dataset}' WHERE timestamp > NOW() - INTERVAL '2' HOUR GROUP BY provider;`;
-		
-		// Get error data
-		let errorData: any = {};
-		try {
-			let errorResponse = await fetch(`https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/analytics_engine/sql`, {
-				method: 'POST',
-				body: errorQuery,
-				headers: {
-					'Authorization': `Bearer ${env.CLOUDFLARE_ACCOUNT_TOKEN}`,
-				}
-			});
-			
-			if (errorResponse.status === 200) {
-				let data = await errorResponse.json();
-				for (let row of (data as any).data) {
-					errorData[row.provider] = parseInt(row.error_count);
-				}
-			}
-		} catch (e) {
-			console.log('Failed to get error data:', e);
-		}
-		
-		// Get success data
-		let successData: any = {};
-		try {
-			let successResponse = await fetch(`https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/analytics_engine/sql`, {
-				method: 'POST',
-				body: successQuery,
-				headers: {
-					'Authorization': `Bearer ${env.CLOUDFLARE_ACCOUNT_TOKEN}`,
-				}
-			});
-			
-			if (successResponse.status === 200) {
-				let data = await successResponse.json();
-				for (let row of (data as any).data) {
-					successData[row.provider] = parseInt(row.success_count);
-				}
-			}
-		} catch (e) {
-			console.log('Failed to get success data:', e);
-		}
-		
-		// Calculate error rates and adjust health scores
-		for (let provider in healthScores) {
-			let errors = errorData[provider] || 0;
-			let successes = successData[provider] || 0;
-			let totalRequests = errors + successes;
-			
-			if (totalRequests > 0) {
-				let errorRate = errors / totalRequests;
-				// Health score: 100 * (1 - error_rate), minimum 1
-				// 0% error rate = 100, 1% error rate = 99, 10% error rate = 90, etc.
-				healthScores[provider] = Math.max(1, Math.round(100 * (1 - errorRate)));
-			}
-			// If no data, keep default score of 100
-		}
-		
-		// Store single combined health scores in KV with 10 minute TTL
-		await env.RESOLVER_HEALTH.put('health-scores', JSON.stringify(healthScores), {
-			expirationTtl: 600 // 10 minutes
-		});
-		
-		console.log(`Updated combined health scores:`, Object.keys(healthScores).length, 'providers');
-	} catch (e) {
-		console.log(`Failed to update health scores:`, e);
-	}
-}
-
-async function getResolverHealthScores(env: any, family: any) {
-	try {
-		// Fast KV lookup - single combined health scores for all families
-		let healthData = await env.RESOLVER_HEALTH.get('health-scores', 'json');
-		return healthData || {};
-	} catch (e) {
-		console.log(`Failed to get health scores:`, e);
-		return {};
-	}
-}
-
-function weightedSample(resolvers: any, healthScores: any, family: any, n: any) {
-	// Calculate weights for each resolver
-	let weightedResolvers = resolvers.map((r: any) => {
-		let resolverUrl = Resolvers[r]?.[family];
-		if (!resolverUrl) return { resolver: r, weight: 0 };
-		
-		let hostname = new URL(resolverUrl).hostname;
-		let health = healthScores[hostname] || 50; // Default health score
-		
-		return { resolver: r, weight: health };
-	}).filter((wr: any) => wr.weight > 0);
-	
-	if (weightedResolvers.length === 0) return resolvers.slice(0, n);
-	
-	// Select n resolvers based on weighted probability
-	let selected = [];
-	let totalWeight = weightedResolvers.reduce((sum: number, wr: any) => sum + wr.weight, 0);
-	
-	for (let i = 0; i < Math.min(n, weightedResolvers.length); i++) {
-		let random = Math.random() * totalWeight;
-		let cumulative = 0;
-		
-		for (let wr of weightedResolvers) {
-			cumulative += wr.weight;
-			if (random <= cumulative) {
-				selected.push(wr.resolver);
-				// Remove selected resolver to avoid duplicates
-				weightedResolvers = weightedResolvers.filter((x: any) => x.resolver !== wr.resolver);
-				totalWeight -= wr.weight;
-				break;
-			}
-		}
-	}
-	
-	return selected.length > 0 ? selected : resolvers.slice(0, n);
-}
-
-async function chooseResolvers(resolvers: any, q: any, family: any = "freedom", n: any = 3, env: any) {
-	let p = [];
-	
-	// Get current health scores
-	let healthScores = await getResolverHealthScores(env, family);
-	
-	// Select resolvers using weighted sampling based on health
-	let selectedResolvers;
-	if (Object.keys(healthScores).length > 0) {
-		selectedResolvers = weightedSample(resolvers, healthScores, family, n);
-	} else {
-		// Fallback to random selection if no health data
-		selectedResolvers = resolvers.length > n ? sampleArrayN(resolvers, n) : resolvers;
-	}
-	
-	// Create DNS requests for selected resolvers
-	for (let r of selectedResolvers) {
-		try {
-			p.push(getDNSResponse(`${Resolvers[r][family]}?dns=${q}`, env, family))
-		}
-		catch(e: any) {}
-	}
-
-	return p;
-}
-
-function getRandomInt (min: any, max: any) {
-	return Math.floor(Math.random() * (max - min + 1)) + min
-}
 
 router.all('/resolve', async (request, env, context) => {
 	// First, grab some request information
@@ -247,23 +37,8 @@ router.all('/resolve', async (request, env, context) => {
 
 	if (!['A', 'AAAA', 'DNSKEY', 'MX', 'NS', 'SRV', 'TXT'].includes(rrtype)) return new Response('Unsupported rrtype', { status: 400 })
 
-	// Next, we need to prepare a query with DNSSEC enforcement
-	let query: any = dnsPacket.encode({
-		type: 'query',
-		id: getRandomInt(1, 65534),
-		flags: dnsPacket.RECURSION_DESIRED, // CD flag is NOT set, enforcing DNSSEC validation
-		additionals: [{
-			type: 'OPT',
-			name: '.',
-			class: 4096, // UDP payload size is set via class field for OPT records
-			flags: dnsPacket.DNSSEC_OK // Request DNSSEC records
-		}],
-		questions: [{
-			type: rrtype,
-			name: name
-		}]
-	})
-	query = base64url(query);
+	// Create DNS query with DNSSEC enforcement
+	const query = createDNSQuery(name, rrtype);
 
 	// Next, we prepare to send it on, first pick a resolver (by default, we use the default)
 	let resolver: any = Config['default'].resolvers
@@ -279,7 +54,7 @@ router.all('/resolve', async (request, env, context) => {
 	}
 	family = getResolverFamily(family);
 
-	let providers = await chooseResolvers(resolver, query, family, 3, env);
+	let providers = await chooseResolvers(resolver, query, family, 3, env, getResolverHealthScores);
 	
 	// And send it off
 	let answer: any;
@@ -356,12 +131,8 @@ router.all('/resolve', async (request, env, context) => {
 
 	// And a comment from where it came from
 	let prov: any = new URL(answer.url).hostname;
-	// In order to check how we're doing responses, we'll log the provider and the resolver to identify issues
-	env.ANALYTICS.writeDataPoint({
-		'blobs': [prov], // We log what provider was used
-		'doubles': [],
-		'indexes': [family] // And what resolver family was used
-	});
+	// Log usage analytics
+	logUsageAnalytics(env, prov, family);
 	resp.Comment = `Response from ${prov}`
 
 	return new Response(JSON.stringify(resp), { headers: { 'Content-Type': 'application/json'}})
@@ -392,29 +163,16 @@ router.all('/dns-query', async (request, env, context) => {
 	}
 
 	// Decode, modify for DNSSEC enforcement, and re-encode the query
-	let decodedQuery: any;
 	try {
+		let decodedQuery: any;
 		if (request.method == 'GET') {
 			decodedQuery = dnsPacket.decode(base64url.toBuffer(q));
 		} else {
 			decodedQuery = dnsPacket.decode(q);
 		}
 		
-		// Enforce DNSSEC: ensure CD flag is NOT set
-		decodedQuery.flags = decodedQuery.flags & ~dnsPacket.CHECKING_DISABLED; // Clear CD flag
-		decodedQuery.flags = decodedQuery.flags | dnsPacket.RECURSION_DESIRED; // Ensure RD is set
-		
-		// Add minimal EDNS0 with DNSSEC_OK flag
-		if (!decodedQuery.additionals) {
-			decodedQuery.additionals = [];
-		}
-		
-		decodedQuery.additionals.push({
-			type: 'OPT',
-			name: '.',
-			class: 512, // Smaller UDP payload size
-			flags: dnsPacket.DNSSEC_OK
-		});
+		// Enforce DNSSEC
+		decodedQuery = enforceDNSSEC(decodedQuery);
 		
 		// Re-encode and convert to base64url
 		q = base64url(dnsPacket.encode(decodedQuery));
@@ -441,7 +199,7 @@ router.all('/dns-query', async (request, env, context) => {
 	}
 	family = getResolverFamily(family);
 
-	let providers = await chooseResolvers(resolver, q, family, 3, env);
+	let providers = await chooseResolvers(resolver, q, family, 3, env, getResolverHealthScores);
 	
 	// And send it off
 	let answer: any;
@@ -456,13 +214,9 @@ router.all('/dns-query', async (request, env, context) => {
 		return new Response(`We encountered an error while performing this lookup: ${e}`, { status: 500 });
 	}
 
-	// Next, log the usage to Analytics Engine
+	// Log usage analytics
 	let prov: any = new URL(answer.url).hostname;
-	env.ANALYTICS.writeDataPoint({
-		'blobs': [prov], // We log what provider was used
-		'doubles': [],
-		'indexes': [family] // And what resolver family was used
-	});
+	logUsageAnalytics(env, prov, family);
 
 	// And if we need a debug issue
 	if (request.url.includes('?debug')) console.log(new URL(answer.url).hostname)
@@ -535,19 +289,17 @@ router.get('/resolver-usage', async (request, env) => {
 
 	try {
 		let query = `SELECT blob1 AS resolver, sum(_sample_interval) AS count FROM 'mydnsproxy-${dataset}' WHERE index1 = '${family}' AND timestamp > NOW() - INTERVAL '1' DAY GROUP BY resolver ORDER BY count DESC;`
-		let data: any = await fetch(`https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/analytics_engine/sql`, {
-			method: 'POST',
-			body: query,
-			headers: {
-				'Authorization': `Bearer ${env.CLOUDFLARE_ACCOUNT_TOKEN}`,
-			}
-		})
-		if (data.status !== 200) return {}
-		data = await data.json();
-
-		resp.data = data.data;
+		let result = await executeAnalyticsQuery(query, env);
+		
+		if (result.error) {
+			resp.error = result.error;
+		} else {
+			resp.data = result.data;
+		}
 	}
-	catch(e: any) {}
+	catch(e: any) {
+		resp.error = e.message;
+	}
 
 	return new Response(JSON.stringify(resp, null, 2), { headers: {'Content-Type': 'application/json'}})
 })
@@ -572,53 +324,23 @@ router.get('/error-analytics', async (request, env) => {
 	let resp: any = { queryType, hours, dataset }
 
 	try {
-		let query = '';
+		const query = buildAnalyticsQuery(queryType, hours, dataset);
+		const result = await executeAnalyticsQuery(query, env);
 		
-		switch (queryType) {
-			case 'error-rates':
-				query = `SELECT blob1 AS provider, blob2 AS error_type, index1 AS resolver_family, COUNT() AS error_count FROM 'mydnsproxy-errors-${dataset}' WHERE timestamp > NOW() - INTERVAL '${hours}' HOUR GROUP BY provider, error_type, resolver_family ORDER BY error_count DESC;`;
-				break;
-				
-			case 'http-errors':
-				query = `SELECT blob1 AS provider, blob2 AS error_type, double1 AS http_status, COUNT() AS occurrences FROM 'mydnsproxy-errors-${dataset}' WHERE blob2 LIKE 'HTTP_%' AND timestamp > NOW() - INTERVAL '${hours}' HOUR GROUP BY provider, error_type, http_status ORDER BY occurrences DESC;`;
-				break;
-				
-			case 'reliability':
-				query = `SELECT blob1 AS provider, index1 AS resolver_family, COUNT() AS error_count FROM 'mydnsproxy-errors-${dataset}' WHERE timestamp > NOW() - INTERVAL '${hours}' HOUR GROUP BY provider, resolver_family ORDER BY error_count DESC;`;
-				break;
-				
-			case 'error-types':
-				query = `SELECT blob1 AS provider, CASE WHEN blob2 = 'NETWORK_ERROR' THEN 'Network Issues' WHEN blob2 = 'TIMEOUT_ERROR' THEN 'Timeout Issues' WHEN blob2 LIKE 'HTTP_%' THEN 'HTTP Errors' WHEN blob2 = 'DNS_ERROR' THEN 'DNS Resolution' ELSE 'Other' END AS issue_category, COUNT() AS count FROM 'mydnsproxy-errors-${dataset}' WHERE timestamp > NOW() - INTERVAL '${hours}' HOUR GROUP BY provider, issue_category ORDER BY provider, count DESC;`;
-				break;
-				
-			case 'combined-health':
-				query = `SELECT blob1 AS provider, COUNT() AS total_errors FROM 'mydnsproxy-errors-${dataset}' WHERE timestamp > NOW() - INTERVAL '${hours}' HOUR GROUP BY provider ORDER BY total_errors DESC;`;
-				break;
-				
-			default:
-				return new Response(JSON.stringify({
-					error: 'Invalid query type',
-					validTypes: ['error-rates', 'http-errors', 'reliability', 'error-types', 'combined-health']
-				}), { status: 400, headers: {'Content-Type': 'application/json'}});
-		}
-
-		let data: any = await fetch(`https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/analytics_engine/sql`, {
-			method: 'POST',
-			body: query,
-			headers: {
-				'Authorization': `Bearer ${env.CLOUDFLARE_ACCOUNT_TOKEN}`,
-			}
-		})
-		
-		if (data.status !== 200) {
-			resp.error = `Analytics API returned ${data.status}`;
+		if (result.error) {
+			resp.error = result.error;
 		} else {
-			data = await data.json();
-			resp.data = data.data;
-			resp.meta = data.meta;
+			resp.data = result.data;
+			resp.meta = result.meta;
 		}
 	}
 	catch(e: any) {
+		if (e.message === 'Invalid query type') {
+			return new Response(JSON.stringify({
+				error: 'Invalid query type',
+				validTypes: ['error-rates', 'http-errors', 'reliability', 'error-types', 'combined-health']
+			}), { status: 400, headers: {'Content-Type': 'application/json'}});
+		}
 		resp.error = e.message;
 	}
 
