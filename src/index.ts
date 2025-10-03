@@ -208,28 +208,66 @@ router.get('/resolver-usage', async (request, env) => {
 	// First, we grab the hostname they asked for
 	let url: any = new URL(request.url);
 
+	// Parse query parameters
+	const hours = parseInt(url.searchParams.get('hours') || '24');
+	const days = parseInt(url.searchParams.get('days') || '0');
+	
+	// Validate timeframe parameters
+	if (hours < 1 || hours > 168) { // Max 7 days in hours
+		return new Response(JSON.stringify({
+			error: 'Invalid hours parameter',
+			message: 'Hours must be between 1 and 168 (7 days)'
+		}), { status: 400, headers: {'Content-Type': 'application/json'}});
+	}
+	
+	if (days < 0 || days > 30) { // Max 30 days
+		return new Response(JSON.stringify({
+			error: 'Invalid days parameter', 
+			message: 'Days must be between 0 and 30'
+		}), { status: 400, headers: {'Content-Type': 'application/json'}});
+	}
+
 	// Check the hostname is valid
 	let family = "freedom"
 	if (url.hostname.includes('.mydns.network')) {
 		family = url.hostname.split('.')[0];
 	}
-	family = getResolverFamily(family);
+	// Don't map family for analytics queries - use original family name
 
 	// Now we select the right dataset
 	let dataset: any = 'prod'
 	if (url.hostname.includes('.staging.')) dataset = 'dev'
 
-	// Next, we query today's use from Analytics Engine
-	let resp: any = {}
+	// Build timeframe clause
+	let timeClause: string;
+	if (days > 0) {
+		timeClause = `timestamp > NOW() - INTERVAL '${days}' DAY`;
+	} else {
+		timeClause = `timestamp > NOW() - INTERVAL '${hours}' HOUR`;
+	}
+
+	// Next, we query usage from Analytics Engine with specified timeframe
+	let resp: any = {
+		timeframe: days > 0 ? `${days} days` : `${hours} hours`,
+		family: family,
+		dataset: dataset
+	}
 
 	try {
-		let query = `SELECT blob1 AS resolver, sum(_sample_interval) AS count FROM 'mydnsproxy-${dataset}' WHERE index1 = '${family}' AND timestamp > NOW() - INTERVAL '1' DAY GROUP BY resolver ORDER BY count DESC;`
+		let query = `SELECT blob1 AS resolver, sum(_sample_interval) AS count FROM 'mydnsproxy-${dataset}' WHERE index1 = '${family}' AND ${timeClause} GROUP BY resolver ORDER BY count DESC;`
 		let result = await executeAnalyticsQuery(query, env);
 		
 		if (result.error) {
 			resp.error = result.error;
 		} else {
-			resp.data = result.data;
+			// Calculate percentages
+			const totalCount = result.data.reduce((sum: number, row: any) => sum + parseInt(row.count), 0);
+			resp.data = result.data.map((row: any) => ({
+				resolver: row.resolver,
+				count: parseInt(row.count),
+				percentage: totalCount > 0 ? ((parseInt(row.count) / totalCount) * 100).toFixed(2) : '0.00'
+			}));
+			resp.total_queries = totalCount;
 		}
 	}
 	catch(e: any) {

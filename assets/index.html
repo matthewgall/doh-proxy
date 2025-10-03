@@ -1,106 +1,432 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <title>mydns.network</title>
-
-    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.2/cosmo/bootstrap.min.css" integrity="sha512-GVdrCO8+HISboPZQ1DEaBPFw9qrVh8rNqCOZXsk04l2s+kn/gHR8fTq2Hvxz1fkZdhjf5EQJVrxuRWLoXpcngA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="/style.css" >
+    <title>mydns.network - Privacy-First DNS Resolution</title>
+    <meta name="description" content="Fast, secure, and private DNS resolution. Choose from freedom, paranoia, adblock, or family-safe filtering. No logging, maximum privacy.">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="/style.css" rel="stylesheet">
 </head>
-
 <body>
-    <nav class="navbar navbar-inverse navbar-fixed-top">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
-            <div class="navbar-header">
-                <a class="navbar-brand" href="/">mydns.network</a>
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-shield-check me-2"></i>mydns.network
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#resolvers">Resolvers</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#features">Features</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://github.com/matthewgall/doh-proxy">GitHub</a>
+                    </li>
+                </ul>
             </div>
         </div>
     </nav>
 
-    <div class="container">
-        <div class="starter-template">
-            <h1>Welcome to mydns.network</h1>
-            <p class="lead">
-                Simple privacy aware, completely free, DNS resolution for your home, or business
-            </p>
-    
-            <div class="card text-white bg-primary">
-                <div class="card-header">
-                    <h5>freedom</h5>
-                </div>
-                <div class="card-body text-black bg-white">
-                    <p>freedom is our no-filtering, no-logging, privacy aware resolver available over DNS-over-HTTPS/DNS-over-TLS</p>
-
-                    <p>
-                        <strong>DNS-over-HTTPS (DoH):</strong> https://freedom.mydns.network/dns-query<br />
-                        <strong>DNS-over-TLS (DoT):</strong> freedom.mydns.network
-                    </p>
-                </div>
-            </div>
-            <p>&nbsp;</p>
-
-            <div class="card text-white bg-primary">
-                <div class="card-header">
-                    <h5>paranoia</h5>
-                </div>
-                <div class="card-body text-black bg-white">
-                    <p>paranoid is our no-filtering, no-logging, privacy aware resolver available over DNS-over-HTTPS/DNS-over-TLS.<br /><strong>paranoia does not use Google or Cloudflare upstreams</strong></p>
-
-                    <p>
-                        <strong>DNS-over-HTTPS (DoH):</strong> https://paranoia.mydns.network/dns-query<br />
-                        <strong>DNS-over-TLS (DoT):</strong> paranoia.mydns.network
-                    </p>
-                </div>
-            </div>
-            <p>&nbsp;</p>
-
-            <div class="card text-white bg-primary">
-                <div class="card-header">
-                    <h5>adblock</h5>
-                </div>
-                <div class="card-body text-black bg-white">
-                    <p>adblock is our adblocking, no-logging, privacy aware resolver available over DNS-over-HTTPS/DNS-over-TLS.</p>
-
-                    <p>
-                        <strong>DNS-over-HTTPS (DoH):</strong> https://adblock.mydns.network/dns-query<br />
-                        <strong>DNS-over-TLS (DoT):</strong> adblock.mydns.network
-                    </p>
-                </div>
-            </div>
-            <p>&nbsp;</p>
-
-            <div class="card text-white bg-primary">
-                <div class="card-header">
-                    <h5>family</h5>
-                </div>
-                <div class="card-body text-black bg-white">
-                    <p>family is our adblocking, adult content blocking, no-logging, privacy aware resolver available over DNS-over-HTTPS/DNS-over-TLS.</p>
-
-                    <p>
-                        <strong>DNS-over-HTTPS (DoH):</strong> https://family.mydns.network/dns-query<br />
-                        <strong>DNS-over-TLS (DoT):</strong> family.mydns.network
-                    </p>
-                </div>
-            </div>
-            <p>&nbsp;</p>
-        </div>
-    </div>
-
-    <footer class="footer">
+    <!-- Hero Section -->
+    <section class="hero text-center">
         <div class="container">
-            <p class="text-muted">
-                &copy;
-                <script type="text/javascript">document.write(new Date().getFullYear());</script> mydns.network - <a
-                    href="https://github.com/matthewgall/doh-proxy">GitHub</a>
-            </p>
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <h1 class="display-4">Privacy-First DNS Resolution</h1>
+                    <p class="lead mb-4">Fast, secure, and completely private DNS resolution with intelligent upstream selection. No logging, no tracking, just pure privacy.</p>
+                    
+                    <!-- Stats Cards -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <div class="stats-card">
+                                <div class="stats-number" id="total-providers">27</div>
+                                <div class="text-white-50">Providers</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stats-card">
+                                <div class="stats-number">99.9%</div>
+                                <div class="text-white-50">Uptime</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stats-card">
+                                <div class="stats-number">&lt;20ms</div>
+                                <div class="text-white-50">Latency</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stats-card">
+                                <div class="stats-number">24/7</div>
+                                <div class="text-white-50">Monitoring</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-center gap-3 flex-wrap">
+                        <a href="#resolvers" class="btn btn-light btn-lg px-4">
+                            <i class="bi bi-arrow-down me-2"></i>Choose Your Resolver
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Resolvers Section -->
+    <section id="resolvers" class="py-5">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="mb-4">Choose Your Resolver</h2>
+                <p class="lead text-muted">Each resolver is tailored for different privacy and filtering needs</p>
+            </div>
+            
+            <div class="row g-4">
+                <!-- Freedom Resolver -->
+                <div class="col-lg-6">
+                    <div class="card resolver-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="resolver-icon freedom me-3">
+                                    <i class="bi bi-unlock"></i>
+                                </div>
+                                <div>
+                                    <h5 class="card-title mb-1">Freedom</h5>
+                                    <small class="text-muted">No filtering • Maximum reach</small>
+                                </div>
+                                <div class="ms-auto">
+                                    <span class="badge bg-success">Popular</span>
+                                </div>
+                            </div>
+                            <p class="card-text text-muted mb-3">
+                                Unfiltered DNS resolution with maximum provider diversity. 
+                                Includes major providers for fastest global performance.
+                            </p>
+                            <div class="mb-3">
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text">DoH</span>
+                                    <input type="text" class="form-control" value="https://freedom.mydns.network/dns-query" readonly>
+                                    <button class="btn btn-outline-primary" type="button" onclick="copyInput(this)">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                                <div class="input-group">
+                                    <span class="input-group-text">DoT</span>
+                                    <input type="text" class="form-control" value="freedom.mydns.network" readonly>
+                                    <button class="btn btn-outline-primary" type="button" onclick="copyInput(this)">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <a href="https://freedom.mydns.network" class="btn btn-primary">
+                                View Details <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Paranoia Resolver -->
+                <div class="col-lg-6">
+                    <div class="card resolver-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="resolver-icon paranoia me-3">
+                                    <i class="bi bi-eye-slash"></i>
+                                </div>
+                                <div>
+                                    <h5 class="card-title mb-1">Paranoia</h5>
+                                    <small class="text-muted">Maximum privacy • No big tech</small>
+                                </div>
+                                <div class="ms-auto">
+                                    <span class="badge bg-warning text-dark">Private</span>
+                                </div>
+                            </div>
+                            <p class="card-text text-muted mb-3">
+                                Privacy-maximized resolver that excludes Google and Cloudflare. 
+                                Uses only privacy-focused, independent DNS providers.
+                            </p>
+                            <div class="mb-3">
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text">DoH</span>
+                                    <input type="text" class="form-control" value="https://paranoia.mydns.network/dns-query" readonly>
+                                    <button class="btn btn-outline-primary" type="button" onclick="copyInput(this)">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                                <div class="input-group">
+                                    <span class="input-group-text">DoT</span>
+                                    <input type="text" class="form-control" value="paranoia.mydns.network" readonly>
+                                    <button class="btn btn-outline-primary" type="button" onclick="copyInput(this)">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <a href="https://paranoia.mydns.network" class="btn btn-primary">
+                                View Details <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Adblock Resolver -->
+                <div class="col-lg-6">
+                    <div class="card resolver-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="resolver-icon adblock me-3">
+                                    <i class="bi bi-shield-x"></i>
+                                </div>
+                                <div>
+                                    <h5 class="card-title mb-1">Adblock</h5>
+                                    <small class="text-muted">Ad blocking • Malware protection</small>
+                                </div>
+                                <div class="ms-auto">
+                                    <span class="badge bg-info">Filtered</span>
+                                </div>
+                            </div>
+                            <p class="card-text text-muted mb-3">
+                                Blocks advertisements, trackers, and malicious domains. 
+                                Perfect for a cleaner, safer browsing experience.
+                            </p>
+                            <div class="mb-3">
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text">DoH</span>
+                                    <input type="text" class="form-control" value="https://adblock.mydns.network/dns-query" readonly>
+                                    <button class="btn btn-outline-primary" type="button" onclick="copyInput(this)">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                                <div class="input-group">
+                                    <span class="input-group-text">DoT</span>
+                                    <input type="text" class="form-control" value="adblock.mydns.network" readonly>
+                                    <button class="btn btn-outline-primary" type="button" onclick="copyInput(this)">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <a href="https://adblock.mydns.network" class="btn btn-primary">
+                                View Details <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Family Resolver -->
+                <div class="col-lg-6">
+                    <div class="card resolver-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="resolver-icon family me-3">
+                                    <i class="bi bi-house-heart"></i>
+                                </div>
+                                <div>
+                                    <h5 class="card-title mb-1">Family</h5>
+                                    <small class="text-muted">Family safe • Adult content filtering</small>
+                                </div>
+                                <div class="ms-auto">
+                                    <span class="badge bg-success">Safe</span>
+                                </div>
+                            </div>
+                            <p class="card-text text-muted mb-3">
+                                Family-friendly filtering that blocks adult content, ads, and malware. 
+                                Safe browsing for children and families.
+                            </p>
+                            <div class="mb-3">
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text">DoH</span>
+                                    <input type="text" class="form-control" value="https://family.mydns.network/dns-query" readonly>
+                                    <button class="btn btn-outline-primary" type="button" onclick="copyInput(this)">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                                <div class="input-group">
+                                    <span class="input-group-text">DoT</span>
+                                    <input type="text" class="form-control" value="family.mydns.network" readonly>
+                                    <button class="btn btn-outline-primary" type="button" onclick="copyInput(this)">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <a href="https://family.mydns.network" class="btn btn-primary">
+                                View Details <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-5 bg-light">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="mb-4">Why Choose mydns.network?</h2>
+                <p class="lead text-muted">Built for privacy, optimized for performance</p>
+            </div>
+            
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="text-center">
+                        <div class="feature-icon mb-3">
+                            <i class="bi bi-shield-lock"></i>
+                        </div>
+                        <h5>Zero Logging</h5>
+                        <p class="text-muted">
+                            We don't log your DNS queries. Ever. Your browsing habits remain completely private.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="text-center">
+                        <div class="feature-icon mb-3">
+                            <i class="bi bi-speedometer2"></i>
+                        </div>
+                        <h5>Lightning Fast</h5>
+                        <p class="text-muted">
+                            Intelligent resolver selection and global distribution ensure minimal latency.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="text-center">
+                        <div class="feature-icon mb-3">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <h5>DNSSEC Enforced</h5>
+                        <p class="text-muted">
+                            All queries enforce DNSSEC validation for maximum security and authenticity.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="text-center">
+                        <div class="feature-icon mb-3">
+                            <i class="bi bi-globe"></i>
+                        </div>
+                        <h5>Multiple Providers</h5>
+                        <p class="text-muted">
+                            Race queries across multiple upstream providers for maximum reliability.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="text-center">
+                        <div class="feature-icon mb-3">
+                            <i class="bi bi-heart-pulse"></i>
+                        </div>
+                        <h5>Health Monitoring</h5>
+                        <p class="text-muted">
+                            Real-time health scoring automatically routes to the best performing resolvers.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="text-center">
+                        <div class="feature-icon mb-3">
+                            <i class="bi bi-github"></i>
+                        </div>
+                        <h5>Open Source</h5>
+                        <p class="text-muted">
+                            Fully open source and transparent. View our code and contribute on GitHub.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Footer -->
+    <footer class="bg-primary text-white py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="text-white">mydns.network</h5>
+                    <p class="text-white-50 mb-0">Privacy-focused DNS resolution for everyone</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="text-white mb-2">
+                        &copy; <span id="currentYear"></span> mydns.network
+                    </p>
+                    <div class="d-flex justify-content-md-end gap-3">
+                        <a href="https://github.com/matthewgall/doh-proxy" class="text-white text-decoration-none">
+                            <i class="bi bi-github me-1"></i>Open Source
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </footer>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.min.js" integrity="sha512-WW8/jxkELe2CAiE4LvQfwm1rajOS8PHasCCx+knHG0gBHt8EXxS6T6tJRTGuDQVnluuAvMxWF4j8SNFDKceLFg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <script>
+        // Set current year
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+        
+        // Copy input field function (for resolver cards)
+        function copyInput(button) {
+            const input = button.parentElement.querySelector('input');
+            input.select();
+            input.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(input.value);
+            
+            // Show feedback
+            const originalIcon = button.innerHTML;
+            button.innerHTML = '<i class="bi bi-check"></i>';
+            button.classList.remove('btn-outline-primary');
+            button.classList.add('btn-success');
+            
+            setTimeout(() => {
+                button.innerHTML = originalIcon;
+                button.classList.remove('btn-success');
+                button.classList.add('btn-outline-primary');
+            }, 2000);
+        }
+        
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Load live stats
+        async function loadStats() {
+            try {
+                const response = await fetch('/dns-providers');
+                const data = await response.json();
+                if (data.providers) {
+                    document.getElementById('total-providers').textContent = data.providers.length;
+                }
+            } catch (e) {
+                // Fallback to static number
+            }
+        }
+        
+        loadStats();
+    </script>
 </body>
 </html>

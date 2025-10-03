@@ -4,6 +4,7 @@ account_id = "b0d7b9f87b57470ef508f1a511093cae"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 routes = [
+    { pattern = "staging.mydns.network/*", zone_name = "mydns.network" },
     { pattern = "adblock.staging.mydns.network/*", zone_name = "mydns.network" },
     { pattern = "family.staging.mydns.network/*", zone_name = "mydns.network" },
     { pattern = "freedom.staging.mydns.network/*", zone_name = "mydns.network" },
