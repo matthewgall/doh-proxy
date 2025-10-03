@@ -359,14 +359,14 @@ router.get('/style.css', async (request, env) => {
 
 router.get('/', async (request, env) => {
 	const url = new URL(request.url);
-	
+	const hostname = url.hostname;
+
 	// Serve static index.html for main domain
-	if (url.hostname === 'mydns.network' || !url.hostname.includes('.mydns.network')) {
+	if (url.hostname == "mydns.network") {
 		return env.ASSETS.fetch(new Request(`${url.origin}/index.html`));
 	}
 	
 	// Dynamic resolver pages for subdomains
-	const hostname = url.hostname;
 	let resolver: any = Config['default'].resolvers;
 	
 	if (Config[hostname as keyof typeof Config]) {
@@ -388,19 +388,31 @@ router.get('/', async (request, env) => {
 		}
 	}
 
-	// Fetch template and perform substitutions
-	const templateResponse = await env.ASSETS.fetch(new Request(`${url.origin}/resolver.html`));
-	let template = await templateResponse.text();
-	
-	template = template.replaceAll('[HOSTNAME]', hostname);
-	template = template.replaceAll('[NAME]', hostname.replace('.mydns.network', ''));
-	template = template.replaceAll('[RESOLVERS]', resolvers.join('\n'));
-
-	return new Response(template, {
-		headers: {
-			'Content-Type': 'text/html'
+	try {
+		// Fetch template and perform substitutions
+		const templateResponse = await env.ASSETS.fetch(new Request(`${url.origin}/resolver.html`));
+		
+		if (!templateResponse.ok) {
+			console.log('Template fetch failed:', templateResponse.status);
+			return env.ASSETS.fetch(new Request(`${url.origin}/index.html`));
 		}
-	});
+		
+		let template = await templateResponse.text();
+		
+		template = template.replaceAll('[HOSTNAME]', hostname);
+		template = template.replaceAll('[NAME]', hostname.replace('.mydns.network', ''));
+		template = template.replaceAll('[RESOLVERS]', resolvers.join('\n'));
+
+		return new Response(template, {
+			headers: {
+				'Content-Type': 'text/html'
+			}
+		});
+	} catch (e: any) {
+		console.log('Template processing error:', e.message);
+		// Fallback to index.html
+		return env.ASSETS.fetch(new Request(`${url.origin}/index.html`));
+	}
 });
 
 router.all("*", () => new Response("404, not found!", { status: 404 }))
