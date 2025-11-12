@@ -207,54 +207,59 @@ async function classifyResolver(resolver) {
     return isNaN(num) ? 0 : Math.abs(num);
   };
 
-  const adultBlocked = parsePercentage(percentages.adult);
-  const adsBlocked = parsePercentage(percentages.ads);
-  const trackingBlocked = parsePercentage(percentages.tracking);
-  const gamblingBlocked = parsePercentage(percentages.gambling);
-  const torrentsBlocked = parsePercentage(percentages.torrents);
-  const socialBlocked = parsePercentage(percentages.social);
-  const benignBlocked = parsePercentage(percentages.benign);
-  const cdnBlocked = parsePercentage(percentages.cdn);
-  const streamingBlocked = parsePercentage(percentages.streaming);
-  const newsBlocked = parsePercentage(percentages.news);
-  const techBlocked = parsePercentage(percentages.tech);
-  const ecommerceBlocked = parsePercentage(percentages.ecommerce);
-  const financeBlocked = parsePercentage(percentages.finance);
+  // Parse all percentages into a Map for easier access
+  const blocked = new Map([
+    ['adult', parsePercentage(percentages.adult)],
+    ['ads', parsePercentage(percentages.ads)],
+    ['tracking', parsePercentage(percentages.tracking)],
+    ['gambling', parsePercentage(percentages.gambling)],
+    ['torrents', parsePercentage(percentages.torrents)],
+    ['social', parsePercentage(percentages.social)],
+    ['benign', parsePercentage(percentages.benign)],
+    ['cdn', parsePercentage(percentages.cdn)],
+    ['streaming', parsePercentage(percentages.streaming)],
+    ['news', parsePercentage(percentages.news)],
+    ['tech', parsePercentage(percentages.tech)],
+    ['ecommerce', parsePercentage(percentages.ecommerce)],
+    ['finance', parsePercentage(percentages.finance)]
+  ]);
 
   // Check if resolver is broken (blocks legitimate services)
-  if (benignBlocked > 20 || cdnBlocked > 20 || streamingBlocked > 30 ||
-      newsBlocked > 20 || techBlocked > 20 || ecommerceBlocked > 20 || financeBlocked > 20) {
+  if (blocked.get('benign') > 20 || blocked.get('cdn') > 20 || blocked.get('streaming') > 30 ||
+      blocked.get('news') > 20 || blocked.get('tech') > 20 || blocked.get('ecommerce') > 20 ||
+      blocked.get('finance') > 20) {
     classification = 'broken';
     confidence = 'high';
   }
   // Paranoia: blocks tracking heavily, may block some legitimate services
-  else if (trackingBlocked >= 80 && socialBlocked >= 60 && adsBlocked >= 80) {
+  else if (blocked.get('tracking') >= 80 && blocked.get('social') >= 60 && blocked.get('ads') >= 80) {
     classification = 'paranoia';
     confidence = 'high';
   }
   // Family filtering: blocks adult + gambling + torrents, may block social
-  else if (adultBlocked >= 80 && gamblingBlocked >= 60 && torrentsBlocked >= 60) {
+  else if (blocked.get('adult') >= 80 && blocked.get('gambling') >= 60 && blocked.get('torrents') >= 60) {
     classification = 'family';
     confidence = 'high';
   }
   // Family filtering (medium confidence): blocks adult content
-  else if (adultBlocked >= 80 && gamblingBlocked >= 40) {
+  else if (blocked.get('adult') >= 80 && blocked.get('gambling') >= 40) {
     classification = 'family';
     confidence = 'medium';
   }
   // Adblock: blocks ads/tracking but not adult content or torrents
-  else if (adsBlocked >= 60 && trackingBlocked >= 40 && adultBlocked < 20 && torrentsBlocked < 20) {
+  else if (blocked.get('ads') >= 60 && blocked.get('tracking') >= 40 &&
+           blocked.get('adult') < 20 && blocked.get('torrents') < 20) {
     classification = 'adblock';
     confidence = 'high';
   }
   // Adblock (medium): blocks some ads/tracking
-  else if (adsBlocked >= 40 && adultBlocked < 20) {
+  else if (blocked.get('ads') >= 40 && blocked.get('adult') < 20) {
     classification = 'adblock';
     confidence = 'medium';
   }
   // Freedom: minimal blocking (only malware/phishing/security)
-  else if (adultBlocked < 20 && adsBlocked < 20 && gamblingBlocked < 20 &&
-           torrentsBlocked < 20 && socialBlocked < 20) {
+  else if (blocked.get('adult') < 20 && blocked.get('ads') < 20 && blocked.get('gambling') < 20 &&
+           blocked.get('torrents') < 20 && blocked.get('social') < 20) {
     classification = 'freedom';
     confidence = 'high';
   }
