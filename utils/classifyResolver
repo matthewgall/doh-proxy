@@ -1,0 +1,342 @@
+#!/usr/bin/env node
+
+/**
+ * DNS Resolver Classification Utility
+ *
+ * Tests DNS resolvers against a corpus of categorized domains to determine
+ * which family (freedom, paranoia, adblock, family) they belong to.
+ */
+
+const fs = require('fs');
+const path = require('path');
+const { Command } = require('commander');
+const dnsPacket = require('@dnsquery/dns-packet');
+
+// Load test domains
+const DOMAINS_FILE = path.join(__dirname, 'test-domains.json');
+const domains = JSON.parse(fs.readFileSync(DOMAINS_FILE, 'utf8'));
+
+// Setup CLI
+const program = new Command();
+
+program
+  .name('classifyResolver')
+  .description('Classify DNS resolvers based on their filtering behavior')
+  .version('1.0.0')
+  .argument('<resolver-url>', 'DNS resolver URL to test (e.g., https://dns.google/dns-query)')
+  .option('-v, --verbose', 'Show detailed output for each domain test', false)
+  .option('-p, --protocol <type>', 'Protocol to use (doh or dot)', 'doh')
+  .option('-j, --json', 'Output results as JSON', false)
+  .option('-t, --timeout <ms>', 'Query timeout in milliseconds', '5000')
+  .option('-c, --concurrency <num>', 'Number of parallel queries', '5')
+  .addHelpText('after', `
+Examples:
+  $ classifyResolver https://dns.google/dns-query
+  $ classifyResolver https://cloudflare-dns.com/dns-query --verbose
+  $ classifyResolver https://family.cloudflare-dns.com/dns-query --json
+  $ classifyResolver https://adblock.mydns.network/dns-query -v
+`);
+
+program.parse();
+
+const options = program.opts();
+const resolverUrl = program.args[0];
+
+// Global options
+const verbose = options.verbose;
+const jsonOutput = options.json;
+const queryTimeout = parseInt(options.timeout);
+const concurrency = parseInt(options.concurrency);
+
+// DNS query functions using @dnsquery/dns-packet
+async function queryDoH(resolver, domain) {
+  try {
+    // Create DNS query using dns-packet
+    const query = dnsPacket.encode({
+      type: 'query',
+      id: Math.floor(Math.random() * 65535),
+      flags: dnsPacket.RECURSION_DESIRED,
+      questions: [{
+        type: 'A',
+        name: domain
+      }]
+    });
+
+    const base64Query = Buffer.from(query).toString('base64url');
+
+    const url = new URL(resolver);
+    url.searchParams.set('dns', base64Query);
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        'Accept': 'application/dns-message',
+        'User-Agent': 'mydns-classifier/1.0'
+      },
+      signal: AbortSignal.timeout(queryTimeout)
+    });
+
+    if (!response.ok) {
+      return { error: `HTTP ${response.status}` };
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const answer = dnsPacket.decode(Buffer.from(arrayBuffer));
+
+    // Check response code
+    if (answer.rcode === 'NXDOMAIN') {
+      return { blocked: true, reason: 'NXDOMAIN' };
+    }
+
+    if (answer.rcode === 'SERVFAIL') {
+      return { blocked: true, reason: 'SERVFAIL' };
+    }
+
+    if (answer.rcode !== 'NOERROR') {
+      return { blocked: true, reason: `RCODE ${answer.rcode}` };
+    }
+
+    // Check if we got answers
+    if (!answer.answers || answer.answers.length === 0) {
+      return { blocked: true, reason: 'No answer' };
+    }
+
+    // Check for block page IPs
+    const aRecords = answer.answers.filter(a => a.type === 'A');
+    if (aRecords.length > 0) {
+      const ip = aRecords[0].data;
+      if (ip === '0.0.0.0' || ip === '127.0.0.1' || ip.startsWith('0.') || ip === '::') {
+        return { blocked: true, reason: 'Block page IP', ip };
+      }
+      return { blocked: false, ip };
+    }
+
+    return { blocked: false };
+  } catch (error) {
+    // Distinguish between timeout and other errors
+    if (error.name === 'TimeoutError' || error.message.includes('timeout')) {
+      return { error: 'Timeout' };
+    }
+    return { error: error.message };
+  }
+}
+
+async function testDomain(resolver, domain, category) {
+  if (verbose) {
+    process.stdout.write(`  Testing ${domain.padEnd(30)} ... `);
+  }
+
+  const result = await queryDoH(resolver, domain);
+
+  if (result.error) {
+    if (verbose) console.log(`❌ Error: ${result.error}`);
+    return { domain, category, error: result.error };
+  }
+
+  if (verbose) {
+    if (result.blocked) {
+      console.log(`🚫 Blocked (${result.reason})`);
+    } else {
+      console.log(`✅ Resolved`);
+    }
+  }
+
+  return { domain, category, blocked: result.blocked, reason: result.reason };
+}
+
+async function classifyResolver(resolver) {
+  if (!jsonOutput) {
+    console.log(`\n🔍 Testing resolver: ${resolver}\n`);
+  }
+
+  // Dynamically create results object from domains
+  const results = {};
+  for (const category of Object.keys(domains)) {
+    results[category] = { tested: 0, blocked: 0, errors: 0 };
+  }
+
+  const details = [];
+
+  // Test each category (with parallel requests for better performance)
+  for (const [category, testDomains] of Object.entries(domains)) {
+    if (verbose) console.log(`\n📋 Testing ${category} domains:`);
+
+    // Run queries in parallel batches for optimal performance
+    for (let i = 0; i < testDomains.length; i += concurrency) {
+      const batch = testDomains.slice(i, i + concurrency);
+      const batchResults = await Promise.all(
+        batch.map(domain => testDomain(resolver, domain, category))
+      );
+
+      // Process results
+      for (const result of batchResults) {
+        details.push(result);
+        results[category].tested++;
+        if (result.error) {
+          results[category].errors++;
+        } else if (result.blocked) {
+          results[category].blocked++;
+        }
+      }
+    }
+  }
+
+  // Calculate percentages (exclude errors from calculation)
+  const percentages = {};
+  for (const [category, stats] of Object.entries(results)) {
+    const successful = stats.tested - stats.errors;
+    // Only calculate if we have enough successful queries
+    if (successful >= 3) {
+      percentages[category] = (stats.blocked / successful * 100).toFixed(1);
+    } else if (successful > 0) {
+      // Mark low sample size with negative value
+      percentages[category] = -(stats.blocked / successful * 100).toFixed(1);
+    } else {
+      // No successful queries - can't determine
+      percentages[category] = 'N/A';
+    }
+  }
+
+  // Classify based on blocking patterns
+  let classification = 'unknown';
+  let confidence = 0;
+
+  // Helper to safely parse percentages (handles 'N/A' and negative values)
+  const parsePercentage = (val) => {
+    if (val === 'N/A') return 0;
+    const num = parseFloat(val);
+    return isNaN(num) ? 0 : Math.abs(num);
+  };
+
+  const adultBlocked = parsePercentage(percentages.adult);
+  const adsBlocked = parsePercentage(percentages.ads);
+  const trackingBlocked = parsePercentage(percentages.tracking);
+  const gamblingBlocked = parsePercentage(percentages.gambling);
+  const torrentsBlocked = parsePercentage(percentages.torrents);
+  const socialBlocked = parsePercentage(percentages.social);
+  const benignBlocked = parsePercentage(percentages.benign);
+  const cdnBlocked = parsePercentage(percentages.cdn);
+  const streamingBlocked = parsePercentage(percentages.streaming);
+  const newsBlocked = parsePercentage(percentages.news);
+  const techBlocked = parsePercentage(percentages.tech);
+  const ecommerceBlocked = parsePercentage(percentages.ecommerce);
+  const financeBlocked = parsePercentage(percentages.finance);
+
+  // Check if resolver is broken (blocks legitimate services)
+  if (benignBlocked > 20 || cdnBlocked > 20 || streamingBlocked > 30 ||
+      newsBlocked > 20 || techBlocked > 20 || ecommerceBlocked > 20 || financeBlocked > 20) {
+    classification = 'broken';
+    confidence = 'high';
+  }
+  // Paranoia: blocks tracking heavily, may block some legitimate services
+  else if (trackingBlocked >= 80 && socialBlocked >= 60 && adsBlocked >= 80) {
+    classification = 'paranoia';
+    confidence = 'high';
+  }
+  // Family filtering: blocks adult + gambling + torrents, may block social
+  else if (adultBlocked >= 80 && gamblingBlocked >= 60 && torrentsBlocked >= 60) {
+    classification = 'family';
+    confidence = 'high';
+  }
+  // Family filtering (medium confidence): blocks adult content
+  else if (adultBlocked >= 80 && gamblingBlocked >= 40) {
+    classification = 'family';
+    confidence = 'medium';
+  }
+  // Adblock: blocks ads/tracking but not adult content or torrents
+  else if (adsBlocked >= 60 && trackingBlocked >= 40 && adultBlocked < 20 && torrentsBlocked < 20) {
+    classification = 'adblock';
+    confidence = 'high';
+  }
+  // Adblock (medium): blocks some ads/tracking
+  else if (adsBlocked >= 40 && adultBlocked < 20) {
+    classification = 'adblock';
+    confidence = 'medium';
+  }
+  // Freedom: minimal blocking (only malware/phishing/security)
+  else if (adultBlocked < 20 && adsBlocked < 20 && gamblingBlocked < 20 &&
+           torrentsBlocked < 20 && socialBlocked < 20) {
+    classification = 'freedom';
+    confidence = 'high';
+  }
+  // Unknown: unclear pattern
+  else {
+    classification = 'unknown';
+    confidence = 'low';
+  }
+
+  const output = {
+    resolver,
+    classification,
+    confidence,
+    percentages,
+    results,
+    details: jsonOutput ? details : undefined
+  };
+
+  if (jsonOutput) {
+    console.log(JSON.stringify(output, null, 2));
+  } else {
+    // Print results
+    console.log('\n' + '='.repeat(60));
+    console.log('📊 RESULTS');
+    console.log('='.repeat(60));
+    console.log('');
+    console.log('Content Filtering:');
+    if (results.adult) console.log(`  Adult:           ${results.adult.blocked}/${results.adult.tested - results.adult.errors} blocked (${percentages.adult}%)`);
+    if (results.gambling) console.log(`  Gambling:        ${results.gambling.blocked}/${results.gambling.tested - results.gambling.errors} blocked (${percentages.gambling}%)`);
+    if (results.torrents) console.log(`  Torrents:        ${results.torrents.blocked}/${results.torrents.tested - results.torrents.errors} blocked (${percentages.torrents}%)`);
+    console.log('');
+    console.log('Privacy & Advertising:');
+    if (results.ads) console.log(`  Ads:             ${results.ads.blocked}/${results.ads.tested - results.ads.errors} blocked (${percentages.ads}%)`);
+    if (results.tracking) console.log(`  Tracking:        ${results.tracking.blocked}/${results.tracking.tested - results.tracking.errors} blocked (${percentages.tracking}%)`);
+    console.log('');
+    console.log('Security:');
+    if (results.malware) console.log(`  Malware:         ${results.malware.blocked}/${results.malware.tested - results.malware.errors} blocked (${percentages.malware}%)`);
+    if (results.phishing) console.log(`  Phishing:        ${results.phishing.blocked}/${results.phishing.tested - results.phishing.errors} blocked (${percentages.phishing}%)`);
+    console.log('');
+    console.log('Social & Communication:');
+    if (results.social) console.log(`  Social Media:    ${results.social.blocked}/${results.social.tested - results.social.errors} blocked (${percentages.social}%)`);
+    if (results.vpn) console.log(`  VPN Services:    ${results.vpn.blocked}/${results.vpn.tested - results.vpn.errors} blocked (${percentages.vpn}%)`);
+    console.log('');
+    console.log('Legitimate Services:');
+    if (results.benign) console.log(`  Benign:          ${results.benign.blocked}/${results.benign.tested - results.benign.errors} blocked (${percentages.benign}%)`);
+    if (results.cdn) console.log(`  CDN:             ${results.cdn.blocked}/${results.cdn.tested - results.cdn.errors} blocked (${percentages.cdn}%)`);
+    if (results.streaming) console.log(`  Streaming:       ${results.streaming.blocked}/${results.streaming.tested - results.streaming.errors} blocked (${percentages.streaming}%)`);
+    if (results.news) console.log(`  News:            ${results.news.blocked}/${results.news.tested - results.news.errors} blocked (${percentages.news}%)`);
+    if (results.tech) console.log(`  Tech:            ${results.tech.blocked}/${results.tech.tested - results.tech.errors} blocked (${percentages.tech}%)`);
+    if (results.ecommerce) console.log(`  E-commerce:      ${results.ecommerce.blocked}/${results.ecommerce.tested - results.ecommerce.errors} blocked (${percentages.ecommerce}%)`);
+    if (results.finance) console.log(`  Finance:         ${results.finance.blocked}/${results.finance.tested - results.finance.errors} blocked (${percentages.finance}%)`);
+    console.log('');
+    console.log(`Classification:  ${classification.toUpperCase()}`);
+    console.log(`Confidence:      ${confidence.toUpperCase()}`);
+    console.log('');
+
+    // Errors summary
+    const totalErrors = Object.values(results).reduce((sum, r) => sum + r.errors, 0);
+    const totalTests = Object.values(results).reduce((sum, r) => sum + r.tested, 0);
+    const errorRate = ((totalErrors / totalTests) * 100).toFixed(1);
+
+    if (totalErrors > 0) {
+      console.log(`⚠️  ${totalErrors}/${totalTests} queries failed (${errorRate}% error rate)`);
+      if (totalErrors > totalTests * 0.3) {
+        console.log(`⚠️  High error rate may affect classification accuracy`);
+      }
+      console.log('');
+    }
+  }
+
+  return output;
+}
+
+// Run classification
+classifyResolver(resolverUrl)
+  .then(result => {
+    // Exit with code based on classification
+    if (result.classification === 'broken') process.exit(2);
+    if (result.classification === 'unknown') process.exit(1);
+    process.exit(0);
+  })
+  .catch(error => {
+    console.error('Fatal error:', error);
+    process.exit(3);
+  });
