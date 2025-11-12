@@ -207,22 +207,13 @@ async function classifyResolver(resolver) {
     return isNaN(num) ? 0 : Math.abs(num);
   };
 
-  // Parse all percentages into a Map for easier access
-  const blocked = new Map([
-    ['adult', parsePercentage(percentages.adult)],
-    ['ads', parsePercentage(percentages.ads)],
-    ['tracking', parsePercentage(percentages.tracking)],
-    ['gambling', parsePercentage(percentages.gambling)],
-    ['torrents', parsePercentage(percentages.torrents)],
-    ['social', parsePercentage(percentages.social)],
-    ['benign', parsePercentage(percentages.benign)],
-    ['cdn', parsePercentage(percentages.cdn)],
-    ['streaming', parsePercentage(percentages.streaming)],
-    ['news', parsePercentage(percentages.news)],
-    ['tech', parsePercentage(percentages.tech)],
-    ['ecommerce', parsePercentage(percentages.ecommerce)],
-    ['finance', parsePercentage(percentages.finance)]
-  ]);
+  // Dynamically parse all percentages into a Map based on available categories
+  const blocked = new Map(
+    Object.keys(domains).map(category => [
+      category,
+      parsePercentage(percentages[category])
+    ])
+  );
 
   // Check if resolver is broken (blocks legitimate services)
   if (blocked.get('benign') > 20 || blocked.get('cdn') > 20 || blocked.get('streaming') > 30 ||
@@ -286,32 +277,56 @@ async function classifyResolver(resolver) {
     console.log('📊 RESULTS');
     console.log('='.repeat(60));
     console.log('');
-    console.log('Content Filtering:');
-    if (results.adult) console.log(`  Adult:           ${results.adult.blocked}/${results.adult.tested - results.adult.errors} blocked (${percentages.adult}%)`);
-    if (results.gambling) console.log(`  Gambling:        ${results.gambling.blocked}/${results.gambling.tested - results.gambling.errors} blocked (${percentages.gambling}%)`);
-    if (results.torrents) console.log(`  Torrents:        ${results.torrents.blocked}/${results.torrents.tested - results.torrents.errors} blocked (${percentages.torrents}%)`);
-    console.log('');
-    console.log('Privacy & Advertising:');
-    if (results.ads) console.log(`  Ads:             ${results.ads.blocked}/${results.ads.tested - results.ads.errors} blocked (${percentages.ads}%)`);
-    if (results.tracking) console.log(`  Tracking:        ${results.tracking.blocked}/${results.tracking.tested - results.tracking.errors} blocked (${percentages.tracking}%)`);
-    console.log('');
-    console.log('Security:');
-    if (results.malware) console.log(`  Malware:         ${results.malware.blocked}/${results.malware.tested - results.malware.errors} blocked (${percentages.malware}%)`);
-    if (results.phishing) console.log(`  Phishing:        ${results.phishing.blocked}/${results.phishing.tested - results.phishing.errors} blocked (${percentages.phishing}%)`);
-    console.log('');
-    console.log('Social & Communication:');
-    if (results.social) console.log(`  Social Media:    ${results.social.blocked}/${results.social.tested - results.social.errors} blocked (${percentages.social}%)`);
-    if (results.vpn) console.log(`  VPN Services:    ${results.vpn.blocked}/${results.vpn.tested - results.vpn.errors} blocked (${percentages.vpn}%)`);
-    console.log('');
-    console.log('Legitimate Services:');
-    if (results.benign) console.log(`  Benign:          ${results.benign.blocked}/${results.benign.tested - results.benign.errors} blocked (${percentages.benign}%)`);
-    if (results.cdn) console.log(`  CDN:             ${results.cdn.blocked}/${results.cdn.tested - results.cdn.errors} blocked (${percentages.cdn}%)`);
-    if (results.streaming) console.log(`  Streaming:       ${results.streaming.blocked}/${results.streaming.tested - results.streaming.errors} blocked (${percentages.streaming}%)`);
-    if (results.news) console.log(`  News:            ${results.news.blocked}/${results.news.tested - results.news.errors} blocked (${percentages.news}%)`);
-    if (results.tech) console.log(`  Tech:            ${results.tech.blocked}/${results.tech.tested - results.tech.errors} blocked (${percentages.tech}%)`);
-    if (results.ecommerce) console.log(`  E-commerce:      ${results.ecommerce.blocked}/${results.ecommerce.tested - results.ecommerce.errors} blocked (${percentages.ecommerce}%)`);
-    if (results.finance) console.log(`  Finance:         ${results.finance.blocked}/${results.finance.tested - results.finance.errors} blocked (${percentages.finance}%)`);
-    console.log('');
+
+    // Define category groupings for better organization
+    const categoryGroups = {
+      'Content Filtering': ['adult', 'gambling', 'torrents'],
+      'Privacy & Advertising': ['ads', 'tracking'],
+      'Security': ['malware', 'phishing'],
+      'Social & Communication': ['social', 'vpn'],
+      'Legitimate Services': ['benign', 'cdn', 'streaming', 'news', 'tech', 'ecommerce', 'finance']
+    };
+
+    // Display labels for categories
+    const categoryLabels = {
+      adult: 'Adult',
+      gambling: 'Gambling',
+      torrents: 'Torrents',
+      ads: 'Ads',
+      tracking: 'Tracking',
+      malware: 'Malware',
+      phishing: 'Phishing',
+      social: 'Social Media',
+      vpn: 'VPN Services',
+      benign: 'Benign',
+      cdn: 'CDN',
+      streaming: 'Streaming',
+      news: 'News',
+      tech: 'Tech',
+      ecommerce: 'E-commerce',
+      finance: 'Finance'
+    };
+
+    // Find any categories not in predefined groups
+    const allGroupedCategories = Object.values(categoryGroups).flat();
+    const ungroupedCategories = Object.keys(domains).filter(cat => !allGroupedCategories.includes(cat));
+    if (ungroupedCategories.length > 0) {
+      categoryGroups['Other'] = ungroupedCategories;
+    }
+
+    // Print each group dynamically
+    for (const [groupName, categories] of Object.entries(categoryGroups)) {
+      console.log(groupName + ':');
+      for (const category of categories) {
+        if (results[category]) {
+          const label = (categoryLabels[category] || category.charAt(0).toUpperCase() + category.slice(1)) + ':';
+          const successful = results[category].tested - results[category].errors;
+          console.log(`  ${label.padEnd(17)} ${results[category].blocked}/${successful} blocked (${percentages[category]}%)`);
+        }
+      }
+      console.log('');
+    }
+
     console.log(`Classification:  ${classification.toUpperCase()}`);
     console.log(`Confidence:      ${confidence.toUpperCase()}`);
     console.log('');
