@@ -215,49 +215,111 @@ async function classifyResolver(resolver) {
     ])
   );
 
-  // Check if resolver is broken (blocks legitimate services)
-  if (blocked.get('benign') > 20 || blocked.get('cdn') > 20 || blocked.get('streaming') > 30 ||
-      blocked.get('news') > 20 || blocked.get('tech') > 20 || blocked.get('ecommerce') > 20 ||
-      blocked.get('finance') > 20) {
-    classification = 'broken';
-    confidence = 'high';
-  }
-  // Paranoia: blocks tracking heavily, may block some legitimate services
-  else if (blocked.get('tracking') >= 80 && blocked.get('social') >= 60 && blocked.get('ads') >= 80) {
-    classification = 'paranoia';
-    confidence = 'high';
-  }
-  // Family filtering: blocks adult + gambling + torrents, may block social
-  else if (blocked.get('adult') >= 80 && blocked.get('gambling') >= 60 && blocked.get('torrents') >= 60) {
-    classification = 'family';
-    confidence = 'high';
-  }
-  // Family filtering (medium confidence): blocks adult content
-  else if (blocked.get('adult') >= 80 && blocked.get('gambling') >= 40) {
-    classification = 'family';
-    confidence = 'medium';
-  }
-  // Adblock: blocks ads/tracking but not adult content or torrents
-  else if (blocked.get('ads') >= 60 && blocked.get('tracking') >= 40 &&
-           blocked.get('adult') < 20 && blocked.get('torrents') < 20) {
-    classification = 'adblock';
-    confidence = 'high';
-  }
-  // Adblock (medium): blocks some ads/tracking
-  else if (blocked.get('ads') >= 40 && blocked.get('adult') < 20) {
-    classification = 'adblock';
-    confidence = 'medium';
-  }
-  // Freedom: minimal blocking (only malware/phishing/security)
-  else if (blocked.get('adult') < 20 && blocked.get('ads') < 20 && blocked.get('gambling') < 20 &&
-           blocked.get('torrents') < 20 && blocked.get('social') < 20) {
-    classification = 'freedom';
-    confidence = 'high';
-  }
-  // Unknown: unclear pattern
-  else {
-    classification = 'unknown';
-    confidence = 'low';
+  // Helper to check if condition matches
+  const checkCondition = (condition) => {
+    if (condition.min !== undefined && condition.max !== undefined) {
+      const value = blocked.get(condition.category) || 0;
+      return value >= condition.min && value <= condition.max;
+    }
+    if (condition.min !== undefined) {
+      return (blocked.get(condition.category) || 0) >= condition.min;
+    }
+    if (condition.max !== undefined) {
+      return (blocked.get(condition.category) || 0) < condition.max;
+    }
+    return false;
+  };
+
+  // Define classification rules (evaluated in order)
+  const classificationRules = [
+    {
+      name: 'broken',
+      confidence: 'high',
+      description: 'Blocks legitimate services',
+      conditions: [
+        { category: 'benign', min: 20 },
+        { category: 'cdn', min: 20 },
+        { category: 'streaming', min: 30 },
+        { category: 'news', min: 20 },
+        { category: 'tech', min: 20 },
+        { category: 'ecommerce', min: 20 },
+        { category: 'finance', min: 20 }
+      ],
+      matchAny: true
+    },
+    {
+      name: 'paranoia',
+      confidence: 'high',
+      description: 'Blocks tracking heavily, may block some legitimate services',
+      conditions: [
+        { category: 'tracking', min: 80 },
+        { category: 'social', min: 60 },
+        { category: 'ads', min: 80 }
+      ]
+    },
+    {
+      name: 'family',
+      confidence: 'high',
+      description: 'Blocks adult + gambling + torrents, may block social',
+      conditions: [
+        { category: 'adult', min: 80 },
+        { category: 'gambling', min: 60 },
+        { category: 'torrents', min: 60 }
+      ]
+    },
+    {
+      name: 'family',
+      confidence: 'medium',
+      description: 'Blocks adult content',
+      conditions: [
+        { category: 'adult', min: 80 },
+        { category: 'gambling', min: 40 }
+      ]
+    },
+    {
+      name: 'adblock',
+      confidence: 'high',
+      description: 'Blocks ads/tracking but not adult content or torrents',
+      conditions: [
+        { category: 'ads', min: 60 },
+        { category: 'tracking', min: 40 },
+        { category: 'adult', max: 20 },
+        { category: 'torrents', max: 20 }
+      ]
+    },
+    {
+      name: 'adblock',
+      confidence: 'medium',
+      description: 'Blocks some ads/tracking',
+      conditions: [
+        { category: 'ads', min: 40 },
+        { category: 'adult', max: 20 }
+      ]
+    },
+    {
+      name: 'freedom',
+      confidence: 'high',
+      description: 'Minimal blocking (only malware/phishing/security)',
+      conditions: [
+        { category: 'adult', max: 20 },
+        { category: 'ads', max: 20 },
+        { category: 'gambling', max: 20 },
+        { category: 'torrents', max: 20 },
+        { category: 'social', max: 20 }
+      ]
+    }
+  ];
+
+  // Evaluate rules in order
+  for (const rule of classificationRules) {
+    const matchAll = rule.matchAny !== true;
+    const matches = rule.conditions.map(checkCondition);
+
+    if ((matchAll && matches.every(m => m)) || (!matchAll && matches.some(m => m))) {
+      classification = rule.name;
+      confidence = rule.confidence;
+      break;
+    }
   }
 
   const output = {
