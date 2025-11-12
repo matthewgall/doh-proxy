@@ -310,15 +310,26 @@ async function classifyResolver(resolver) {
     }
   ];
 
-  // Evaluate rules in order
-  for (const rule of classificationRules) {
-    const matchAll = rule.matchAny !== true;
-    const matches = rule.conditions.map(checkCondition);
+  // Calculate total error rate to determine if we have enough data
+  const totalErrors = Object.values(results).reduce((sum, r) => sum + r.errors, 0);
+  const totalTests = Object.values(results).reduce((sum, r) => sum + r.tested, 0);
+  const errorRate = totalTests > 0 ? totalErrors / totalTests : 1;
 
-    if ((matchAll && matches.every(m => m)) || (!matchAll && matches.some(m => m))) {
-      classification = rule.name;
-      confidence = rule.confidence;
-      break;
+  // If error rate is too high (>50%), classification is unreliable
+  if (errorRate > 0.5) {
+    classification = 'unreliable';
+    confidence = 'none';
+  } else {
+    // Evaluate rules in order
+    for (const rule of classificationRules) {
+      const matchAll = rule.matchAny !== true;
+      const matches = rule.conditions.map(checkCondition);
+
+      if ((matchAll && matches.every(m => m)) || (!matchAll && matches.some(m => m))) {
+        classification = rule.name;
+        confidence = rule.confidence;
+        break;
+      }
     }
   }
 
@@ -393,14 +404,14 @@ async function classifyResolver(resolver) {
     console.log(`Confidence:      ${confidence.toUpperCase()}`);
     console.log('');
 
-    // Errors summary
-    const totalErrors = Object.values(results).reduce((sum, r) => sum + r.errors, 0);
-    const totalTests = Object.values(results).reduce((sum, r) => sum + r.tested, 0);
-    const errorRate = ((totalErrors / totalTests) * 100).toFixed(1);
+    // Errors summary (totalErrors and totalTests already calculated above)
+    const errorRatePercent = ((totalErrors / totalTests) * 100).toFixed(1);
 
     if (totalErrors > 0) {
-      console.log(`⚠️  ${totalErrors}/${totalTests} queries failed (${errorRate}% error rate)`);
-      if (totalErrors > totalTests * 0.3) {
+      console.log(`⚠️  ${totalErrors}/${totalTests} queries failed (${errorRatePercent}% error rate)`);
+      if (errorRate > 0.5) {
+        console.log(`❌  Error rate too high - classification unreliable`);
+      } else if (errorRate > 0.3) {
         console.log(`⚠️  High error rate may affect classification accuracy`);
       }
       console.log('');
@@ -414,6 +425,7 @@ async function classifyResolver(resolver) {
 classifyResolver(resolverUrl)
   .then(result => {
     // Exit with code based on classification
+    if (result.classification === 'unreliable') process.exit(4);
     if (result.classification === 'broken') process.exit(2);
     if (result.classification === 'unknown') process.exit(1);
     process.exit(0);
