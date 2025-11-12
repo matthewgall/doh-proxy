@@ -15,6 +15,10 @@ routes = [
 [observability]
 enabled = true
 
+# Smart Placement
+[placement]
+mode = "smart"
+
 # Static Assets
 [assets]
 directory = "./assets"
