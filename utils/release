@@ -1,0 +1,61 @@
+#!/bin/bash
+
+set -euo pipefail
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Get the version from package.json
+VERSION=$(jq -r .version package.json)
+
+if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
+    echo -e "${RED}Error: Could not read version from package.json${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}Creating release for version: ${VERSION}${NC}"
+
+# Check if tag already exists
+if git rev-parse "$VERSION" >/dev/null 2>&1; then
+    echo -e "${RED}Error: Tag ${VERSION} already exists${NC}"
+    exit 1
+fi
+
+# Check if on main branch
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if [ "$CURRENT_BRANCH" != "main" ]; then
+    echo -e "${YELLOW}Warning: You are on branch '${CURRENT_BRANCH}', not 'main'${NC}"
+    read -p "Continue anyway? (y/N) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        exit 1
+    fi
+fi
+
+# Check if there are changes to package files
+if git diff --quiet package.json package-lock.json && git diff --cached --quiet package.json package-lock.json; then
+    echo -e "${YELLOW}No changes to package files${NC}"
+else
+    # Add and commit package files
+    echo -e "${GREEN}Committing package files...${NC}"
+    git add package.json package-lock.json
+    git commit -m "RELEASE ${VERSION}"
+fi
+
+# Create annotated tag
+echo -e "${GREEN}Creating annotated tag ${VERSION}${NC}"
+git tag -a "$VERSION" -m "RELEASE ${VERSION}"
+
+# Push commits and tags
+echo -e "${GREEN}Pushing to remote...${NC}"
+if git push && git push --tags; then
+    echo -e "${GREEN}✓ Release ${VERSION} created and pushed successfully!${NC}"
+else
+    echo -e "${RED}Error: Failed to push to remote${NC}"
+    echo -e "${YELLOW}Rolling back tag...${NC}"
+    git tag -d "$VERSION"
+    exit 1
+fi
