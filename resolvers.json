@@ -118,6 +118,9 @@
     "rethinkdns": {
         "freedom": "https://max.rethinkdns.com/dns-query"
     },
+    "vrecipes": {
+        "freedom": "https://v.recipes/dns-query"
+    },
     "wikimedia": {
         "freedom": "https://wikimedia-dns.org/dns-query"
     },

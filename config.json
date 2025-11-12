@@ -49,6 +49,7 @@
             "njalla",
             "opendns",
             "rethinkdns",
+            "vrecipes",
             "wikimedia"
         ]
     },
@@ -80,6 +81,7 @@
             "namecheap",
             "njalla",
             "rethinkdns",
+            "vrecipes",
             "wikimedia",
             "yandex"
         ]
