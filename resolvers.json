@@ -115,6 +115,9 @@
     "quad9": {
         "malware": "https://dns10.quad9.net/dns-query"
     },
+    "rabbitdns": {
+        "freedom": "https://dns.rabbitdns.org/dns-query"
+    },
     "rethinkdns": {
         "freedom": "https://max.rethinkdns.com/dns-query"
     },
