@@ -50,6 +50,7 @@
             "opendns",
             "rabbitdns",
             "rethinkdns",
+            "surfsharkdns",
             "vrecipes",
             "wikimedia"
         ]
@@ -83,6 +84,7 @@
             "njalla",
             "rabbitdns",
             "rethinkdns",
+            "surfsharkdns",
             "vrecipes",
             "wikimedia",
             "yandex"

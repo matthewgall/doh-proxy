@@ -121,6 +121,9 @@
     "rethinkdns": {
         "freedom": "https://max.rethinkdns.com/dns-query"
     },
+    "surfsharkdns": {
+        "freedom": "https://dns.surfsharkdns.com/dns-query"
+    },
     "vrecipes": {
         "freedom": "https://v.recipes/dns-query"
     },
