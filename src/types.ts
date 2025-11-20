@@ -66,11 +66,8 @@ export interface ResolverConfig {
 }
 
 // Environment Binding Types
-export interface CloudflareEnv {
-	RESOLVER_HEALTH: KVNamespace;
-	ANALYTICS: AnalyticsEngineDataset;
-	ERROR_ANALYTICS: AnalyticsEngineDataset;
-	ASSETS: Fetcher;
+// Extends the auto-generated Env interface from worker-configuration.d.ts
+export interface CloudflareEnv extends Env {
 	CLOUDFLARE_ACCOUNT_ID: string;
 	CLOUDFLARE_ACCOUNT_TOKEN: string;
 }
