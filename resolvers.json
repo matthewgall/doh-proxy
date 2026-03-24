@@ -60,10 +60,6 @@
     "digitalsize": {
         "freedom": "https://dns.digitalsize.net/dns-query"
     },
-    "dns0eu": {
-        "family": "https://kids.dns0.eu/",
-        "freedom": "https://open.dns0.eu/"
-    },
     "dnsforfamily": {
         "family": "https://dns-doh.dnsforfamily.com/dns-query"
     },
