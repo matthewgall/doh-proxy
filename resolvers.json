@@ -117,6 +117,9 @@
     "surfsharkdns": {
         "freedom": "https://dns.surfsharkdns.com/dns-query"
     },
+    "uncensoreddns": {
+        "freedom": "https://anycast.uncensoreddns.org/dns-query"
+    },
     "vrecipes": {
         "freedom": "https://v.recipes/dns-query"
     },
