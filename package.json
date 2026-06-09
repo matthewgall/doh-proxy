@@ -10,7 +10,7 @@
   "devDependencies": {
     "@types/dns-packet": "^5.6.5",
     "commander": "^15.0.0",
-    "itty-router": "^5.0.23",
+    "itty-router": "^5.0.24",
     "typescript": "^6.0.3",
     "wrangler": "^4.98.0"
   },
