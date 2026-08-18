@@ -12,7 +12,7 @@
     "commander": "^15.0.0",
     "itty-router": "^5.0.24",
     "typescript": "^7.0.2",
-    "wrangler": "^4.120.1"
+    "wrangler": "^4.123.0"
   },
   "dependencies": {
     "@dnsquery/dns-packet": "^6.1.1",
