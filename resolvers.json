@@ -87,11 +87,6 @@
     "lvnic": {
         "freedom": "https://doh.lv/dns-query"
     },
-    "mullvad": {
-        "adblock": "https://adblock.dns.mullvad.net/dns-query",
-        "family": "https://all.dns.mullvad.net/dns-query",
-        "freedom": "https://dns.mullvad.net/dns-query"
-    },
     "namecheap": {
         "freedom": "https://safeservedns.com/dns-query"
     },

@@ -6,7 +6,6 @@
             "bunny",
             "circl",
             "controld",
-            "mullvad",
             "openbld"
         ]
     },
@@ -18,7 +17,6 @@
             "cloudflare",
             "controld",
             "dnsforfamily",
-            "mullvad",
             "opendns"
         ]
     },
@@ -42,7 +40,6 @@
             "he",
             "libredns",
             "lvnic",
-            "mullvad",
             "namecheap",
             "njalla",
             "opendns",
@@ -76,7 +73,6 @@
             "he",
             "libredns",
             "lvnic",
-            "mullvad",
             "namecheap",
             "njalla",
             "rethinkdns",
